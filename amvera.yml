@@ -1,20 +1,20 @@
 # Конфигурация деплоя на Amvera Cloud.
 #
-# environment: node    - окружение Node.js
-# toolchain            - чем ставятся зависимости и какой версией Node собирать.
-#                        Указан npm, потому что Amvera работает с ним; локально
-#                        у нас pnpm, версии Next и React в package.json записаны
-#                        точно и не поедут.
-# version: 22          - Next.js 16 не запускается на Node 18 из примеров
-#                        документации.
-# containerPort: 3000  - порт, который слушает next start.
+# Окружение browser: проект собирается в набор готовых файлов, которые
+# раздаёт nginx. Сервер Node в работе не участвует - тест целиком
+# статический, ему нечего вычислять на сервере.
 #
-# Сборка и запуск берутся из package.json: build и start.
+# additionalCommands - команда сборки, берётся из package.json.
+# artifacts          - что раздавать: содержимое папки out, которую
+#                      создаёт next build при output: "export".
 
 meta:
   environment: node
   toolchain:
-    name: npm
+    name: browser
     version: 22
-  run:
-    containerPort: 3000
+
+build:
+  additionalCommands: npm run build
+  artifacts:
+    "out/*": /
