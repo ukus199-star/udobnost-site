@@ -1,20 +1,33 @@
 # Конфигурация деплоя на Amvera Cloud.
 #
-# Окружение browser: проект собирается в набор готовых файлов, которые
-# раздаёт nginx. Сервер Node в работе не участвует - тест целиком
-# статический, ему нечего вычислять на сервере.
+# Серверный режим. До фазы 6 здесь было окружение browser: сайт собирался в
+# готовые файлы и раздавался nginx. Статике негде хранить статистику
+# прохождений - нет сервера, который примет событие и запишет его в базу.
 #
-# additionalCommands - команда сборки, берётся из package.json.
-# artifacts          - что раздавать: содержимое папки out, которую
-#                      создаёт next build при output: "export".
+# environment: node       - работает сервер Node, а не только раздача файлов.
+# toolchain                - чем ставить зависимости и какая версия Node.
+# build.additionalCommands - что выполнить после установки зависимостей.
+#                            Amvera сама делает npm install, а сборку - эта строка.
+# run.command              - чем запускать. Взято вместо scriptName: тот умеет
+#                            только `node файл.js`, а у Next.js точки входа в
+#                            виде одного файла нет. command выполняет скрипт
+#                            start из package.json - штатный способ Next.js.
+# run.containerPort        - порт, который слушает приложение. next start
+#                            по умолчанию слушает 3000.
+#
+# Строка подключения к базе сюда не пишется: она живёт в переменных окружения
+# кабинета Amvera под именем DATABASE_URL - правило репо номер 8.
 
 meta:
   environment: node
   toolchain:
-    name: browser
+    name: npm
     version: 22
 
 build:
   additionalCommands: npm run build
-  artifacts:
-    "out/*": /
+
+run:
+  command: npm run start
+  containerPort: 3000
+  persistenceMount: /data
