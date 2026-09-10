@@ -15,6 +15,41 @@ import {
   type TypeCode,
 } from "@/data/questions";
 import { resultTexts } from "@/data/results";
+import type { TestEvent } from "@/lib/events";
+
+/**
+ * Номер прохождения. Две случайные строки подряд - около двадцати знаков из
+ * букв и цифр.
+ *
+ * Он не секретный и никого не опознаёт: нужен только чтобы события одного
+ * прохождения можно было сложить вместе. Живёт в памяти вкладки - обновил
+ * страницу, и номер другой.
+ */
+function makeRunId(): string {
+  const half = () => Math.random().toString(36).slice(2);
+  return (half() + half()).slice(0, 40);
+}
+
+/**
+ * Отправить событие на сервер.
+ *
+ * Ответа не ждём и ошибку глотаем молча - в этом весь смысл. Статистика
+ * второстепенна по отношению к тому, ради чего человек пришёл: упади сеть,
+ * ляг база - он не должен ни заметить, ни застрять.
+ *
+ * keepalive говорит браузеру доставить отправленное, даже если страницу
+ * закрывают прямо сейчас. Без него последнее событие терялось бы чаще всего.
+ */
+function sendEvent(event: TestEvent): void {
+  fetch("/api/events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(event),
+    keepalive: true,
+  }).catch(() => {
+    // Намеренно пусто.
+  });
+}
 
 /**
  * Перемешать список. Алгоритм Фишера-Йетса: идём с конца и меняем каждый
@@ -122,9 +157,20 @@ export default function Home() {
   // useState заставлял бы страницу перерисовываться лишний раз на каждый ответ.
   const lastAnswerAt = useRef(0);
 
+  // Номер этого прохождения. Пустая строка до нажатия «Начать».
+  // useRef, а не useState: на экране от него ничего не зависит.
+  const runId = useRef("");
+
+  // Отправляли ли уже событие результата. Без этого человек, вернувшийся
+  // кнопкой «Назад» и снова дошедший до конца, посчитался бы дважды.
+  const resultSent = useRef(false);
+
   function start() {
+    const id = makeRunId();
+    runId.current = id;
     setShuffledOptions(questions.map((question) => shuffle(question.options)));
     setStarted(true);
+    sendEvent({ runId: id, kind: "start" });
   }
 
   // clickedAt - время самого клика, оно приходит вместе с событием. Спрашивать
@@ -143,6 +189,32 @@ export default function Home() {
     next[current] = type;
     setAnswers(next);
     setCurrent(current + 1);
+
+    // Номер вопроса отправляем от единицы - так же, как его видит человек.
+    // Какой именно вариант выбран, не отправляем: нам важно, докуда дошли,
+    // а не что ответили. Ответы на конкретные вопросы - уже не статистика.
+    sendEvent({
+      runId: runId.current,
+      kind: "answer",
+      questionNumber: current + 1,
+    });
+
+    // Ответ на последний вопрос и есть момент, когда человек увидит результат.
+    // Считаем его здесь, по свежему массиву next: значение в answers обновится
+    // только к следующей отрисовке.
+    const isLastQuestion = current + 1 >= questions.length;
+    if (!isLastQuestion || resultSent.current) return;
+
+    const screen = scoreAnswers(next);
+    if (screen === null) return;
+
+    resultSent.current = true;
+    sendEvent({
+      runId: runId.current,
+      kind: "result",
+      resultType: screen,
+      boundaryCount: next.filter((answer) => answer === "boundary").length,
+    });
   }
 
   function goBack() {
