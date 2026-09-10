@@ -53,7 +53,9 @@ jobs:
           # Пароль не пишем в адрес репозитория: адреса попадают в вывод
           # команд и в сообщения об ошибках. Вместо этого git спрашивает
           # логин и пароль у маленькой подставной программы ниже.
+          # Адрес без .git на конце: у Amvera репозиторий называется именно
+          # так. С .git она отвечает "repository not found".
           git -c credential.helper='!f() { echo "username=ula-star"; echo "password=$AMVERA_PASSWORD"; }; f' \
-              push --force "https://git.amvera.ru/$LOGIN/$PROEKT.git" HEAD:master
+              push --force "https://git.amvera.ru/$LOGIN/$PROEKT" HEAD:master
 
           echo "Отправлено. Amvera собирает ветку master и запускает сборку сама."
