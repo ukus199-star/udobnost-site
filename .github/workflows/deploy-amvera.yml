@@ -1,0 +1,59 @@
+# Отправка кода на Amvera руками GitHub.
+#
+# Зачем через GitHub, а не напрямую. Имя git.amvera.ru режется в сети
+# владелицы проекта: TCP-соединение проходит, а шифрование обрывается на
+# нулевом байте, при этом тот же сервер под именем amvera.ru отвечает
+# нормально. Проверено 10.09.2026. У серверов GitHub такого ограничения нет,
+# поэтому отправляем оттуда.
+#
+# Цепочка целиком: правка в коде -> bash scripts/deploy.sh отправляет в
+# udobnost-site -> этот файл отправляет дальше на Amvera -> Amvera собирает
+# и обновляет сайт. Нажимать в кабинете ничего не нужно.
+#
+# Пароль от Amvera лежит в секретах репозитория под именем AMVERA_PASSWORD.
+# GitHub хранит его зашифрованным, в код он не попадает и в выводе команд
+# заменяется звёздочками.
+
+name: Отправить на Amvera
+
+on:
+  # Только при изменении основной ветки.
+  push:
+    branches: [main]
+  # И по кнопке, если понадобится отправить то же самое ещё раз.
+  workflow_dispatch:
+
+jobs:
+  otpravit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Забрать код
+        uses: actions/checkout@v4
+        with:
+          # Вся история, а не последний коммит: Amvera принимает обычный
+          # push, которому нужна связная цепочка коммитов.
+          fetch-depth: 0
+
+      - name: Отправить в репозиторий Amvera
+        env:
+          AMVERA_PASSWORD: ${{ secrets.AMVERA_PASSWORD }}
+        run: |
+          set -e
+
+          LOGIN="ula-star"
+          PROEKT="my-work-code"
+
+          if [ -z "$AMVERA_PASSWORD" ]; then
+            echo "Нет секрета AMVERA_PASSWORD."
+            echo "Настройки репозитория -> Secrets and variables -> Actions."
+            exit 1
+          fi
+
+          # Пароль не пишем в адрес репозитория: адреса попадают в вывод
+          # команд и в сообщения об ошибках. Вместо этого git спрашивает
+          # логин и пароль у маленькой подставной программы ниже.
+          git -c credential.helper='!f() { echo "username=ula-star"; echo "password=$AMVERA_PASSWORD"; }; f' \
+              push --force "https://git.amvera.ru/$LOGIN/$PROEKT.git" HEAD:master
+
+          echo "Отправлено. Amvera собирает ветку master и запускает сборку сама."
