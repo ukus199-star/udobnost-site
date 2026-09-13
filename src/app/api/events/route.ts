@@ -24,16 +24,23 @@ const windowMs = 60_000;
 // результат. Тридцать - запас на возвраты кнопкой «Назад».
 const maxPerRun = 30;
 
-// Общий потолок на всех сразу. Сто прохождений в месяц - это примерно два в
-// день, так что триста событий в минуту недостижимы при нормальной жизни и
-// заметно ограничивают того, кто решит поразвлечься.
-const maxPerMinute = 300;
+// Общий потолок - на разные ПРОХОЖДЕНИЯ в минуту, не на события.
+//
+// Раньше здесь стоял потолок в 300 событий, и это была дыра: одно прохождение
+// даёт четырнадцать событий, значит триста событий - это всего два десятка
+// человек. Любой желающий выбирал этот запас за секунду, и весь остаток
+// минуты настоящие прохождения не записывались. Защита от мусора работала
+// выключателем статистики.
+//
+// Теперь считаются прохождения. Двести разных прохождений в минуту - это
+// больше, чем мы ждём за месяц, а тому, кто захочет завалить адрес мусором,
+// придётся придумывать новый номер на каждые тридцать событий.
+const maxRunsPerMinute = 200;
 
 // Счётчики живут в памяти процесса и обнуляются при перезапуске. Для нашей
 // задачи этого хватает: цель не в строгом учёте, а в том, чтобы поток нельзя
 // было сделать бесконечным.
 let windowStartedAt = 0;
-let totalInWindow = 0;
 const perRun = new Map<string, number>();
 
 function allow(runId: string, now: number): boolean {
@@ -41,16 +48,21 @@ function allow(runId: string, now: number): boolean {
   // она росла бы, пока не съела бы память.
   if (now - windowStartedAt >= windowMs) {
     windowStartedAt = now;
-    totalInWindow = 0;
     perRun.clear();
   }
 
-  if (totalInWindow >= maxPerMinute) return false;
+  const forThisRun = perRun.get(runId);
 
-  const forThisRun = perRun.get(runId) ?? 0;
+  // Прохождение, которого в этой минуте ещё не было. Проверяем, остался ли
+  // запас на новые: размер карты и есть число разных прохождений за минуту.
+  if (forThisRun === undefined) {
+    if (perRun.size >= maxRunsPerMinute) return false;
+    perRun.set(runId, 1);
+    return true;
+  }
+
   if (forThisRun >= maxPerRun) return false;
 
-  totalInWindow += 1;
   perRun.set(runId, forThisRun + 1);
   return true;
 }

@@ -10,16 +10,34 @@
 
 import { Pool } from "pg";
 
-const connectionString = process.env.DATABASE_URL;
+// Настройки подключения можно задать двумя способами, и второй надёжнее.
+//
+// Одной строкой DATABASE_URL - коротко, но пароль там стоит между двоеточием
+// и собачкой. Если в пароле есть @ : / ? # - а Amvera такие и выдаёт, -
+// строка разваливается, и получается «пароль не подошёл» на ровном месте.
+//
+// Отдельными полями DB_PASSWORD и прочими - длиннее, зато пароль берётся
+// как есть, целиком, какие бы знаки в нём ни были.
+const otdelnyePolya = process.env.DB_PASSWORD;
 
-if (!connectionString) {
-  console.error("Нет строки подключения.");
-  console.error("Создайте файл udobnost/.env.local - как, написано в scripts/zaprosy.md");
+const nastroyki = otdelnyePolya
+  ? {
+      host: process.env.DB_HOST,
+      port: Number(process.env.DB_PORT ?? 5432),
+      database: process.env.DB_NAME,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+    }
+  : { connectionString: process.env.DATABASE_URL };
+
+if (!otdelnyePolya && !process.env.DATABASE_URL) {
+  console.error("Нет настроек подключения.");
+  console.error("Что писать в udobnost/.env.local - в udobnost/scripts/zaprosy.md");
   process.exit(1);
 }
 
 const pool = new Pool({
-  connectionString,
+  ...nastroyki,
   // Amvera требует шифрования при подключении снаружи. Проверку сертификата
   // выключаем: он у них внутренний, и обычной проверке не соответствует.
   // Шифрование при этом работает - перехватить по дороге ничего нельзя.
@@ -68,6 +86,21 @@ const gde_uhodyat = `
   LIMIT 5
 `;
 
+// Сколько ушли, не ответив ни на один вопрос.
+//
+// Самое частое место отвала в любом тесте - первый экран: человек нажал
+// «Начать», прочитал первый вопрос и закрыл вкладку. В запросе выше такие
+// прохождения не видны совсем: там считается последний отвеченный вопрос,
+// а здесь отвечать не начинали.
+//
+// Берём прохождения, у которых есть 'start', но нет ни одного 'answer'.
+const ushli_srazu = `
+  SELECT COUNT(DISTINCT run_id) AS skolko
+  FROM events
+  WHERE kind = 'start'
+    AND run_id NOT IN (SELECT run_id FROM events WHERE kind = 'answer')
+`;
+
 // Какие типы выпадают.
 //
 // Ради этого числа статистика и затевалась: по подписавшимся распределение
@@ -103,12 +136,13 @@ function moskovskoeVremya(date) {
 }
 
 try {
-  const [a, b, c, d, e] = await Promise.all([
+  const [a, b, c, d, e, f] = await Promise.all([
     pool.query(nachato),
     pool.query(doshli),
     pool.query(gde_uhodyat),
     pool.query(tipy),
     pool.query(period),
+    pool.query(ushli_srazu),
   ]);
 
   const nachatoSkolko = Number(a.rows[0].skolko);
@@ -128,9 +162,13 @@ try {
 
   console.log("");
   console.log("Где бросают тест:");
-  if (c.rows.length === 0) {
+  const ushliSrazuSkolko = Number(f.rows[0].skolko);
+  if (c.rows.length === 0 && ushliSrazuSkolko === 0) {
     console.log("   никто не бросал");
   } else {
+    if (ushliSrazuSkolko > 0) {
+      console.log(`   ушли, не ответив ни на один вопрос - ${ushliSrazuSkolko}`);
+    }
     for (const row of c.rows) {
       console.log(`   вопрос ${row.posledniy_vopros} - ушли ${row.skolko}`);
     }

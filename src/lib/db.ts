@@ -102,24 +102,57 @@ export async function ensureSchema(): Promise<boolean> {
  * Ошибку не выбрасывает. Не записалось - и ладно: статистика не должна
  * влиять на прохождение теста.
  */
+const insertEventSql = `
+  INSERT INTO events (run_id, kind, question_number, result_type, boundary_count)
+  VALUES ($1, $2, $3, $4, $5)
+`;
+
+// Код ошибки PostgreSQL «нет такой таблицы». Он приходит в поле code, а не в
+// тексте сообщения: текст зависит от языка сервера, код - нет.
+const NET_TAKOY_TABLITSY = "42P01";
+
 export async function insertEvent(event: TestEvent): Promise<void> {
   const pool = getPool();
   if (!pool) return;
 
+  const znacheniya = [
+    event.runId,
+    event.kind,
+    event.questionNumber ?? null,
+    event.resultType ?? null,
+    event.boundaryCount ?? null,
+  ];
+
   try {
-    await pool.query(
-      `INSERT INTO events (run_id, kind, question_number, result_type, boundary_count)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [
-        event.runId,
-        event.kind,
-        event.questionNumber ?? null,
-        event.resultType ?? null,
-        event.boundaryCount ?? null,
-      ],
-    );
+    await pool.query(insertEventSql, znacheniya);
+    return;
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("[db] событие не записано:", message);
+    // Таблицы нет. Так бывает, если база была недоступна в момент, когда
+    // приложение стартовало: тогда создать таблицу не успели, а второй раз
+    // мы к этому не возвращались. Создаём сейчас и пробуем ещё раз - один.
+    if (isTableMissing(error) && (await ensureSchema())) {
+      try {
+        await pool.query(insertEventSql, znacheniya);
+        return;
+      } catch (povtornaya) {
+        logFailure(povtornaya);
+        return;
+      }
+    }
+    logFailure(error);
   }
+}
+
+function isTableMissing(error: unknown): boolean {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === NET_TAKOY_TABLITSY
+  );
+}
+
+function logFailure(error: unknown): void {
+  const message = error instanceof Error ? error.message : String(error);
+  console.error("[db] событие не записано:", message);
 }
