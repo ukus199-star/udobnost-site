@@ -228,13 +228,13 @@ export default function Home() {
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
           Насколько вы удобны
         </h1>
-        <p className="mt-4 text-zinc-600">
+        <p className="mt-4 text-priglushennyy">
           Двенадцать обычных ситуаций. В каждой выберите то, что ближе к тому,
           как вы поступаете на самом деле, а не к тому, как считаете правильным.
         </p>
         <button
           onClick={start}
-          className="mt-8 rounded-lg bg-zinc-900 px-6 py-3 text-white transition hover:bg-zinc-700"
+          className="mt-8 rounded-myagkiy bg-akcent px-6 py-3 text-poverhnost transition"
         >
           Начать
         </button>
@@ -255,7 +255,7 @@ export default function Home() {
     if (screen === null) {
       return (
         <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center p-6">
-          <p className="text-zinc-600">Считать нечего: ответов нет.</p>
+          <p className="text-priglushennyy">Считать нечего: ответов нет.</p>
         </main>
       );
     }
@@ -268,7 +268,7 @@ export default function Home() {
             test-results.md. Блок 2 с полем ввода встанет ниже в фазе 4. */}
         <h2 className="text-xl font-semibold sm:text-2xl">{text.title}</h2>
         {text.paragraphs.map((paragraph, index) => (
-          <p key={index} className="mt-4 text-zinc-600">
+          <p key={index} className="mt-4 text-priglushennyy">
             {paragraph}
           </p>
         ))}
@@ -290,7 +290,7 @@ export default function Home() {
 
           current + 1 потому, что внутри счёт идёт с нуля, а человеку привычно
           с единицы. */}
-      <p className="text-sm text-zinc-500">
+      <p className="text-sm text-priglushennyy">
         Вопрос {current + 1} из {questions.length}
       </p>
 
@@ -303,10 +303,10 @@ export default function Home() {
           <button
             key={option.type}
             onClick={(event) => choose(option.type, event.timeStamp)}
-            className={`rounded-lg border p-4 text-left transition hover:border-zinc-900 ${
+            className={`rounded-myagkiy border p-4 text-left transition hover:border-granica-yarkaya ${
               answers[current] === option.type
-                ? "border-zinc-900 bg-zinc-50"
-                : "border-zinc-200"
+                ? "border-granica-yarkaya bg-akcent-myagkiy"
+                : "border-granica"
             }`}
           >
             {option.text}
@@ -317,7 +317,7 @@ export default function Home() {
       {current > 0 && (
         <button
           onClick={goBack}
-          className="mt-6 self-start text-sm text-zinc-500 underline"
+          className="mt-6 self-start text-sm text-priglushennyy underline"
         >
           Назад
         </button>
