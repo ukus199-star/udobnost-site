@@ -16,6 +16,7 @@ import {
 } from "@/data/questions";
 import { resultTexts } from "@/data/results";
 import type { TestEvent } from "@/lib/events";
+import { Granica } from "@/components/granica";
 
 /**
  * Номер прохождения. Две случайные строки подряд - около двадцати знаков из
@@ -232,8 +233,8 @@ export default function Home() {
   // объяснение, кнопка. Экран ведёт от «что это» через «сколько займёт» и
   // «о чём речь» к действию.
   //
-  // Картинка появится первым блоком, когда владелица пришлёт референсы
-  // сервиса «Ясно» - рисовать её до этого значило бы гадать о стиле.
+  // Картинка - абстрактный рисунок границы, файл components/granica.tsx.
+  // Что он показывает и почему нарисован кодом - написано там.
   //
   // Всё по центру по горизонтали - тоже её решение: центр собирает экран в
   // одну спокойную точку. По вертикали экран выровнен по верху, а не по
@@ -253,7 +254,15 @@ export default function Home() {
 
               text-balance выравнивает длину строк при переносе: заголовок не
               оставит одно слово висеть на второй строке. */}
-          <h1 className="animate-proyavlenie text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          {/* Рисунок границы. Ширина ограничена: он вводит в тему, а не
+              занимает экран, - главным остаётся заголовок. block нужен, чтобы
+              отступ снизу работал: по умолчанию рисунок строчный. */}
+          <Granica className="animate-proyavlenie mx-auto mb-8 block h-auto w-40 sm:w-48" />
+
+          <h1
+            className="animate-proyavlenie text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
+            style={{ animationDelay: "70ms" }}
+          >
             Узнайте, насколько вы удобны
           </h1>
 
@@ -266,7 +275,7 @@ export default function Home() {
               экранный диктор не зачитывал картинку, смысл уже в тексте. */}
           <p
             className="animate-proyavlenie mt-5 flex items-center justify-center gap-2 text-sm font-medium text-tekst"
-            style={{ animationDelay: "70ms" }}
+            style={{ animationDelay: "140ms" }}
           >
             <svg
               aria-hidden="true"
@@ -296,7 +305,7 @@ export default function Home() {
               подсчёта высоты в JavaScript. */}
           <div
             className="animate-proyavlenie mt-6"
-            style={{ animationDelay: "140ms" }}
+            style={{ animationDelay: "210ms" }}
           >
             <button
               type="button"
@@ -394,7 +403,7 @@ export default function Home() {
               там нет, и нажатие - единственный отклик, который увидят. */}
           <button
             onClick={start}
-            style={{ animationDelay: "210ms" }}
+            style={{ animationDelay: "280ms" }}
             className="animate-proyavlenie mx-auto mt-6 block w-full rounded-myagkiy bg-akcent px-8 py-3.5 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm sm:w-auto"
           >
             Начать тест
@@ -409,7 +418,7 @@ export default function Home() {
               стоит отдельно и не спорит с кнопкой за внимание. */}
           <p
             className="animate-proyavlenie mx-auto mt-8 max-w-sm text-sm leading-relaxed text-priglushennyy"
-            style={{ animationDelay: "210ms" }}
+            style={{ animationDelay: "280ms" }}
           >
             Тест носит исключительно информационный характер и не является
             диагностикой. Для подробной диагностики обратитесь к специалисту.
