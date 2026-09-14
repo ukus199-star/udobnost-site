@@ -222,22 +222,53 @@ export default function Home() {
   }
 
   // ─── Экран 1. Приветствие ───────────────────────────────────────────────
+  //
+  // Экран отвечает на вопросы, которые человек задаёт себе за первые три
+  // секунды: что это, сколько займёт, что делать. Отсюда иерархия: заголовок,
+  // описание, срок, кнопка - и ничего сверх.
+  //
+  // Блоки появляются по очереди, с шагом 70 мс. Шаг маленький намеренно:
+  // это не представление, а ощущение, что страница собирается спокойно,
+  // а не выпрыгивает целиком.
   if (!started) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center p-6">
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Насколько вы удобны
-        </h1>
-        <p className="mt-4 text-priglushennyy">
-          Двенадцать обычных ситуаций. В каждой выберите то, что ближе к тому,
-          как вы поступаете на самом деле, а не к тому, как считаете правильным.
-        </p>
-        <button
-          onClick={start}
-          className="mt-8 rounded-myagkiy bg-akcent px-6 py-3 text-poverhnost transition"
-        >
-          Начать
-        </button>
+      <main className="fon-myagkiy flex min-h-screen flex-col justify-center px-6 py-12">
+        <div className="mx-auto w-full max-w-chtenie">
+          <h1 className="animate-proyavlenie text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            Насколько вы удобны
+          </h1>
+
+          <p
+            className="animate-proyavlenie mt-6 text-base leading-relaxed text-priglushennyy sm:text-lg"
+            style={{ animationDelay: "70ms" }}
+          >
+            Двенадцать обычных ситуаций. В каждой выберите то, что ближе к тому,
+            как вы поступаете на самом деле, а не к тому, как считаете правильным.
+          </p>
+
+          {/* Цена входа. «Двенадцать ситуаций» звучит дольше, чем «три минуты»:
+              человек охотнее начинает, когда знает, сколько это займёт. */}
+          <p
+            className="animate-proyavlenie mt-4 text-sm text-priglushennyy"
+            style={{ animationDelay: "140ms" }}
+          >
+            Три минуты.
+          </p>
+
+          {/* Кнопка на телефоне во всю ширину - по ней попадают большим пальцем,
+              на широком экране по размеру текста.
+
+              Отклик в три ступени. Навели - кнопка темнеет и приподнимается на
+              точку. Нажали - вдавливается. Это важно для телефона: наведения
+              там нет, и нажатие - единственный отклик, который увидят. */}
+          <button
+            onClick={start}
+            style={{ animationDelay: "210ms" }}
+            className="animate-proyavlenie mt-12 w-full rounded-myagkiy bg-akcent px-8 py-3.5 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm sm:w-auto"
+          >
+            Начать
+          </button>
+        </div>
       </main>
     );
   }
