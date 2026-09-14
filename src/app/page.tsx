@@ -17,6 +17,12 @@ import {
 import { resultTexts } from "@/data/results";
 import type { TestEvent } from "@/lib/events";
 import { Granica } from "@/components/granica";
+import {
+  DLITELNOST_UKHODA,
+  Slova,
+  schitatSlova,
+  shagZaderzhki,
+} from "@/components/slova";
 
 /**
  * Номер прохождения. Две случайные строки подряд - около двадцати знаков из
@@ -171,6 +177,16 @@ export default function Home() {
   // внимание у заголовка, срока и кнопки.
   const [podrobnee, setPodrobnee] = useState(false);
 
+  // Идёт ли переход между вопросами - слова текущего вопроса разлетаются.
+  // Пока идёт, нажатия не принимаются, а следующий вопрос ещё не показан.
+  //
+  // Храним дважды. Состояние - чтобы экран получил класс разлёта. Ссылка -
+  // чтобы проверка в обработчике нажатия видела перемену сразу, а не после
+  // перерисовки: два быстрых нажатия - два разных события.
+  const [perehod, setPerehod] = useState(false);
+  const idetPerehod = useRef(false);
+  const taymerPerehoda = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Кнопка «назад» браузера и жест назад на телефоне - просьба владелицы
   // 14.09.2026: человек, нажавший «Начать тест», должен суметь вернуться на
   // стартовую страницу, а не вылететь с сайта.
@@ -190,6 +206,15 @@ export default function Home() {
   // и показывать нечего.
   useEffect(() => {
     function priSmeneShaga() {
+      // Нажали «назад», пока слова разлетались: переход отменяется, иначе
+      // таймер через треть секунды переключил бы вопрос уже на стартовой.
+      if (taymerPerehoda.current) {
+        clearTimeout(taymerPerehoda.current);
+        taymerPerehoda.current = null;
+      }
+      idetPerehod.current = false;
+      setPerehod(false);
+
       const vTeste =
         new URLSearchParams(window.location.search).get("shag") === "test";
       setStarted(vTeste && shuffledOptions.length > 0);
@@ -232,22 +257,66 @@ export default function Home() {
     window.history.back();
   }
 
+  // Переход к другому вопросу: сначала слова текущего разлетаются, потом
+  // показывается новый. primenit - что сделать, когда разлёт закончится:
+  // перейти вперёд или назад.
+  //
+  // Время ожидания считается из тех же чисел, что анимация в globals.css:
+  // разлёт одного слова плюс волна по всем словам экрана. Выходит не больше
+  // 280 мс, а вместе с перерисовкой - около 335: замерено в Chrome.
+  //
+  // У кого в системе выключены анимации - переход мгновенный. Это не
+  // вежливость: при вестибулярных нарушениях движение вызывает тошноту.
+  function perehodK(primenit: () => void) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      primenit();
+      return;
+    }
+
+    const variantyNaEkrane = shuffledOptions[current] ?? [];
+    const vsegoSlov =
+      schitatSlova(questions[current].situation) +
+      variantyNaEkrane.reduce((summa, v) => summa + schitatSlova(v.text), 0);
+    const vremya =
+      DLITELNOST_UKHODA + shagZaderzhki(vsegoSlov) * Math.max(0, vsegoSlov - 1);
+
+    idetPerehod.current = true;
+    setPerehod(true);
+    taymerPerehoda.current = setTimeout(() => {
+      taymerPerehoda.current = null;
+      idetPerehod.current = false;
+      setPerehod(false);
+      primenit();
+    }, vremya);
+  }
+
   // clickedAt - время самого клика, оно приходит вместе с событием. Спрашивать
   // время у системы здесь нельзя: React требует, чтобы внутри компонента не было
   // ничего, что возвращает разное при каждом вызове.
   function choose(type: TypeCode, clickedAt: number) {
+    // Слова ещё разлетаются - нажатие по уходящему вопросу не считается.
+    if (idetPerehod.current) return;
+
     // Треть секунды. Прочитать ситуацию и осознанно выбрать быстрее нельзя,
     // поэтому всё, что приходит раньше, - промах пальцем, а не ответ.
+    //
+    // С переходом эти 350 мс согласованы: разлёт длится до 280 мс, и
+    // случайное второе касание сразу после появления нового вопроса тоже
+    // отсекается.
     if (clickedAt - lastAnswerAt.current < 350) return;
     lastAnswerAt.current = clickedAt;
 
     // Массив не меняем на месте, а делаем новый с одной изменённой ячейкой.
     // React сравнивает старое значение с новым по ссылке: если подправить
     // существующий массив, ссылка останется прежней, и перерисовки не будет.
+    //
+    // Ответ записывается сразу, а вопрос переключается после разлёта: пока
+    // слова уходят, выбранная карточка уже подсвечена - человек видит, что
+    // нажатие принято.
     const next = [...answers];
     next[current] = type;
     setAnswers(next);
-    setCurrent(current + 1);
+    perehodK(() => setCurrent(current + 1));
 
     // Номер вопроса отправляем от единицы - так же, как его видит человек.
     // Какой именно вариант выбран, не отправляем: нам важно, докуда дошли,
@@ -277,7 +346,8 @@ export default function Home() {
   }
 
   function goBack() {
-    setCurrent(current - 1);
+    if (idetPerehod.current) return;
+    perehodK(() => setCurrent(current - 1));
   }
 
   // ─── Экран 1. Приветствие ───────────────────────────────────────────────
@@ -561,74 +631,186 @@ export default function Home() {
   }
 
   // ─── Экран 2. Вопрос ────────────────────────────────────────────────────
+  //
+  // Фаза 3 плана дизайна. Двенадцать вопросов не должны утомлять: видно,
+  // сколько осталось; варианты читаются с телефона одной рукой; выбранный
+  // отличается однозначно.
+  //
+  // Экран выровнен по верху, а не по центру высоты: вопросы разной длины, и
+  // при центрировании полоса прогресса прыгала бы вверх-вниз на каждом.
   const question = questions[current];
   const options = shuffledOptions[current];
 
+  // Порядковый номер первого слова каждого варианта среди всех слов экрана -
+  // сначала слова вопроса, потом вариантов по порядку. По нему считается
+  // задержка: слова уходят и проявляются одной волной сверху вниз.
+  const slovVoprosa = schitatSlova(question.situation);
+  const nachalaVariantov: number[] = [];
+  let schetSlov = slovVoprosa;
+  for (const option of options) {
+    nachalaVariantov.push(schetSlov);
+    schetSlov += schitatSlova(option.text);
+  }
+  const shag = shagZaderzhki(schetSlov);
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center p-6">
-      {/* Прогресс. Своего useState не заводит: оба числа уже есть - current
-          помнит текущий вопрос, questions.length знает, сколько их всего.
-          Отсюда два следствия. Кнопка «Назад» отматывает счётчик сама, потому
-          что она меняет current. И общее число не написано цифрой: добавится
-          тринадцатый вопрос - строка поедет следом, править её не придётся.
-
-          current + 1 потому, что внутри счёт идёт с нуля, а человеку привычно
-          с единицы. */}
-      {/* Ссылка на стартовую - см. naStartovuyu выше. Тихая, чтобы не
-          спорить с вопросом за внимание, но находимая: вверху, где её ищут. */}
-      <button
-        type="button"
-        onClick={naStartovuyu}
-        className="mb-6 inline-flex items-center gap-1.5 self-start text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
-      >
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 16 16"
-          className="size-4 fill-none stroke-current"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M10 4L6 8l4 4" />
-        </svg>
-        На стартовую страницу
-      </button>
-
-      <p className="text-sm text-priglushennyy">
-        Вопрос {current + 1} из {questions.length}
-      </p>
-
-      <p className="mt-3 text-lg font-medium sm:text-xl">{question.situation}</p>
-
-      <div className="mt-6 flex flex-col gap-3">
-        {options.map((option) => (
-          // key нужен React, чтобы отличать пункты списка друг от друга.
-          // Берём тип ответа: в каждом вопросе он встречается ровно один раз.
-          <button
-            key={option.type}
-            onClick={(event) => choose(option.type, event.timeStamp)}
-            className={`rounded-myagkiy border p-4 text-left transition hover:border-granica-yarkaya ${
-              answers[current] === option.type
-                ? "border-granica-yarkaya bg-akcent-myagkiy"
-                : "border-granica"
-            }`}
-          >
-            {option.text}
-          </button>
-        ))}
-      </div>
-
-      {current > 0 && (
+    <main className="min-h-screen bg-poverhnost px-6 pb-16 pt-8 sm:pt-12">
+      <div className="mx-auto w-full max-w-chtenie">
+        {/* Ссылка на стартовую - см. naStartovuyu выше. Тихая, чтобы не
+            спорить с вопросом за внимание, но находимая: вверху, где её ищут. */}
         <button
-          onClick={goBack}
-          className="mt-6 self-start text-sm text-priglushennyy underline"
+          type="button"
+          onClick={naStartovuyu}
+          className="inline-flex items-center gap-1.5 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
         >
-          {/* Раньше подпись была «Назад». Переименовано 14.09.2026, когда
-              появилась ссылка на стартовую: две разные «назад» на одном
-              экране путались бы. */}
-          Предыдущий вопрос
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            className="size-4 fill-none stroke-current"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M10 4L6 8l4 4" />
+          </svg>
+          На стартовую страницу
         </button>
-      )}
+
+        {/* Прогресс: строка и полоса. Строка - точная цифра, полоса - чтобы
+            «сколько осталось» читалось не глядя. Своего состояния не
+            заводит: current помнит вопрос, questions.length знает, сколько
+            их всего. Добавится тринадцатый - поедет сам.
+
+            Полоса заполняется по отвеченным: на первом вопросе пуста, как у
+            референса («прогресс 0%»). Ширина меняется плавно. */}
+        <div className="mt-8">
+          <p className="text-sm text-priglushennyy">
+            Вопрос {current + 1} из {questions.length}
+          </p>
+          <div
+            role="progressbar"
+            aria-label="Пройдено вопросов"
+            aria-valuemin={0}
+            aria-valuemax={questions.length}
+            aria-valuenow={current}
+            className="mt-2 h-1.5 overflow-hidden rounded-full bg-akcent-myagkiy"
+          >
+            <div
+              className="h-full rounded-full bg-akcent transition-[width] duration-300 ease-out"
+              style={{ width: `${(current / questions.length) * 100}%` }}
+            />
+          </div>
+        </div>
+
+        {/* Над первым вопросом - строка про честные ответы. На стартовой
+            странице она спрятана в «Подробнее о тесте», и её прочтут не все,
+            а это защита от главного риска теста из test-design.md -
+            социальной желательности. Здесь её видит каждый, в момент, когда
+            выбор и делается. Со второго вопроса уже не нужна. */}
+        {current === 0 && (
+          <p className="mt-6 text-sm leading-relaxed text-priglushennyy">
+            Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
+            правильно.
+          </p>
+        )}
+
+        {/* Вопрос и варианты - одним блоком, который разлетается при
+            переходе.
+
+            key={current}: у каждого вопроса свой блок. Сменился вопрос - React
+            ставит новый блок, и его слова проявляются с нуля.
+
+            razlet - слова уходят вразлёт, см. globals.css.
+            pointer-events-none - по уходящим карточкам не нажать. */}
+        <div
+          key={current}
+          className={perehod ? "razlet pointer-events-none" : undefined}
+        >
+          <h2 className="mt-6 text-lg font-medium leading-snug text-tekst sm:text-xl">
+            <Slova tekst={question.situation} nachalo={0} shag={shag} />
+          </h2>
+
+          <div className="mt-6 flex flex-col gap-3">
+            {options.map((option, i) => {
+              const vybran = answers[current] === option.type;
+              return (
+                // key нужен React, чтобы отличать пункты списка друг от друга.
+                // Берём тип ответа: в каждом вопросе он встречается ровно раз.
+                //
+                // Состояния карточки:
+                // - обычное: светлый фон, граница палитры;
+                // - наведение (только там, где есть мышь): граница оливковая,
+                //   карточка приподнимается на 2 точки;
+                // - нажатие: карточка вдавливается - отклик для пальца, на
+                //   телефоне наведения нет, и это единственный отклик;
+                // - выбранное: оливковая граница и фон плюс заполненный
+                //   кружок слева. Отличается однозначно, а не оттенком.
+                //
+                // min-h-14 - 56 точек: по карточке попадают большим пальцем,
+                // не целясь. Минимум по плану - 44.
+                <button
+                  key={option.type}
+                  type="button"
+                  aria-pressed={vybran}
+                  onClick={(event) => choose(option.type, event.timeStamp)}
+                  className={`group flex min-h-14 w-full items-center gap-3 rounded-myagkiy border px-4 py-3.5 text-left text-base leading-snug text-tekst transition duration-200 hover:-translate-y-0.5 hover:border-akcent hover:shadow-sm active:translate-y-0 active:scale-[0.99] active:shadow-none ${
+                    vybran
+                      ? "border-akcent bg-akcent-myagkiy"
+                      : "border-granica bg-poverhnost"
+                  }`}
+                >
+                  {/* Кружок выбора, как у референса. Сам по себе не кнопка -
+                      смысл «выбрано» уже передан через aria-pressed. */}
+                  <span
+                    aria-hidden="true"
+                    className={`flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 ${
+                      vybran
+                        ? "border-akcent"
+                        : "border-granica-yarkaya group-hover:border-akcent"
+                    }`}
+                  >
+                    <span
+                      className={`size-2.5 rounded-full bg-akcent transition-transform duration-200 ${
+                        vybran ? "scale-100" : "scale-0"
+                      }`}
+                    />
+                  </span>
+                  <span className="min-w-0">
+                    <Slova
+                      tekst={option.text}
+                      nachalo={nachalaVariantov[i]}
+                      shag={shag}
+                    />
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* «Предыдущий вопрос» - тихая, но находимая: мелко и серым, под
+            вариантами, со стрелкой. На первом вопросе её нет - идти некуда,
+            для стартовой есть ссылка вверху. */}
+        {current > 0 && (
+          <button
+            type="button"
+            onClick={goBack}
+            className="mt-8 inline-flex items-center gap-1.5 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
+          >
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="size-4 fill-none stroke-current"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M10 4L6 8l4 4" />
+            </svg>
+            Предыдущий вопрос
+          </button>
+        )}
+      </div>
     </main>
   );
 }
