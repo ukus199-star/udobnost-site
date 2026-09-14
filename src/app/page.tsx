@@ -237,35 +237,37 @@ export default function Home() {
     return (
       <main className="fon-myagkiy flex min-h-screen flex-col justify-center px-6 py-12">
         <div className="mx-auto w-full max-w-chtenie text-center">
-          {/* Заголовок короткий - правка владелицы 14.09.2026. Длинное «Тест,
-              который покажет, насколько вы удобны» занимало две-три строки и
-              спорило с текстом ниже за внимание.
+          {/* Заголовок - правки владелицы 14.09.2026: без слова «тест» и на
+              ступень крупнее. Первая строка обращается к человеку, а не
+              называет жанр.
 
               text-balance выравнивает длину строк при переносе: заголовок не
               оставит одно слово висеть на второй строке. */}
-          <h1 className="animate-proyavlenie text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-            Тест на удобность
+          <h1 className="animate-proyavlenie text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+            Узнаете, насколько вы удобны
           </h1>
 
-          {/* Обращение от первого лица, в рамке - правка владелицы 14.09.2026:
-              текст должен звучать лично и дружелюбно, а не как инструкция.
+          {/* Обращение от первого лица - правка владелицы 14.09.2026: текст
+              должен звучать лично и дружелюбно, а не как инструкция.
 
-              Рамка тонкая и чёткая, без украшений: это главный мотив всего
-              оформления - мягкая форма, ясная граница.
+              Край блока обозначен тенью, а не линией - тоже её правка: чёткая
+              рамка выглядела слишком жёстко. Тень узкая и прижатая к краю, а не
+              размытое облако: так край читается, а мягкость сохраняется.
+              Сама тень описана в globals.css, класс ten-myagkaya.
 
               Вторая строка - не украшение, её убирать нельзя. Она защищает от
               главного риска теста, записанного в test-design.md: социальной
               желательности. Без неё человек отвечает не как живёт, а как хотел
               бы, все получают «в порядке», и тест бесполезен. */}
           <div
-            className="animate-proyavlenie mt-8 rounded-myagkiy border border-granica bg-poverhnost px-6 py-6 sm:px-8"
+            className="animate-proyavlenie ten-myagkaya mt-10 rounded-myagkiy bg-poverhnost px-6 py-7 sm:px-9"
             style={{ animationDelay: "70ms" }}
           >
-            <p className="text-base leading-relaxed text-priglushennyy sm:text-lg">
+            <p className="text-lg leading-relaxed text-priglushennyy sm:text-xl">
               Я подготовила для вас двенадцать вопросов о самых обычных
               ситуациях. Ответив на них, вы узнаете, как устроена ваша удобность.
             </p>
-            <p className="mt-4 text-sm leading-relaxed text-priglushennyy">
+            <p className="mt-4 text-base leading-relaxed text-priglushennyy">
               Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
               правильно.
             </p>
