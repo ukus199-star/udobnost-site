@@ -265,7 +265,8 @@ export default function Home() {
           >
             <p className="text-lg leading-relaxed text-priglushennyy sm:text-xl">
               Я подготовила для вас двенадцать вопросов о самых обычных
-              ситуациях. Ответив на них, вы узнаете, как устроена ваша удобность.
+              ситуациях. Тест подсветит вам, как устроена ваша удобность.
+              Короткое описание - сразу после ответов.
             </p>
             <p className="mt-4 text-base leading-relaxed text-priglushennyy">
               Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
