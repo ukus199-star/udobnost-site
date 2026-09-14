@@ -6,7 +6,7 @@
 // браузере, потому что она должна реагировать на человека и что-то помнить.
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   questions,
   typePriority,
@@ -171,12 +171,65 @@ export default function Home() {
   // внимание у заголовка, срока и кнопки.
   const [podrobnee, setPodrobnee] = useState(false);
 
+  // Кнопка «назад» браузера и жест назад на телефоне - просьба владелицы
+  // 14.09.2026: человек, нажавший «Начать тест», должен суметь вернуться на
+  // стартовую страницу, а не вылететь с сайта.
+  //
+  // Почему вылетал. Экраны теста переключаются внутри одной страницы, адрес
+  // при этом не менялся, и браузер не знал, что человек куда-то перешёл. Его
+  // «назад» вёл туда, откуда человек пришёл на сайт.
+  //
+  // Как теперь. При входе в тест в историю браузера записывается шаг: к
+  // адресу добавляется ?shag=test. «Назад» снимает этот шаг, браузер
+  // сообщает об этом событием popstate, и мы показываем стартовую страницу.
+  // Next.js такую запись в историю поддерживает штатно - проверено по его
+  // документации в node_modules, раздел «Native History API».
+  //
+  // «Вперёд» работает так же в обратную сторону, но только если тест уже был
+  // начат в этой вкладке: после обновления страницы ответов в памяти нет,
+  // и показывать нечего.
+  useEffect(() => {
+    function priSmeneShaga() {
+      const vTeste =
+        new URLSearchParams(window.location.search).get("shag") === "test";
+      setStarted(vTeste && shuffledOptions.length > 0);
+    }
+    window.addEventListener("popstate", priSmeneShaga);
+    return () => window.removeEventListener("popstate", priSmeneShaga);
+  }, [shuffledOptions.length]);
+
+  // Страницу обновили, стоя в тесте: в адресе осталась метка ?shag=test, а
+  // ответов в памяти уже нет. Убираем метку, чтобы адрес не обещал того, чего
+  // нет на экране. replaceState, а не pushState: лишний шаг в истории не нужен.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("shag") === "test") {
+      window.history.replaceState(null, "", window.location.pathname);
+    }
+  }, []);
+
   function start() {
-    const id = makeRunId();
-    runId.current = id;
-    setShuffledOptions(questions.map((question) => shuffle(question.options)));
+    // Тест уже начат в этой вкладке, человек вернулся на стартовую и нажал
+    // кнопку снова - продолжаем, а не начинаем заново. Ответы остаются,
+    // порядок вариантов не перемешивается повторно, номер прохождения прежний.
+    //
+    // Событие «старт» тоже не отправляем второй раз: иначе в статистике одно
+    // прохождение выглядело бы как брошенное плюс новое.
+    const uzheNachat = shuffledOptions.length > 0;
+    if (!uzheNachat) {
+      const id = makeRunId();
+      runId.current = id;
+      setShuffledOptions(questions.map((question) => shuffle(question.options)));
+      sendEvent({ runId: id, kind: "start" });
+    }
     setStarted(true);
-    sendEvent({ runId: id, kind: "start" });
+    window.history.pushState(null, "", "?shag=test");
+  }
+
+  // Ссылка «На стартовую страницу» на экранах вопроса и результата. Не
+  // переключает экран сама, а делает то же, что кнопка «назад» браузера:
+  // так история остаётся честной, и «вперёд» после неё вернёт в тест.
+  function naStartovuyu() {
+    window.history.back();
   }
 
   // clickedAt - время самого клика, оно приходит вместе с событием. Спрашивать
@@ -424,7 +477,14 @@ export default function Home() {
               style={{ animationDelay: "280ms" }}
               className="animate-proyavlenie mt-6 block w-full rounded-myagkiy bg-akcent px-8 py-4 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm"
             >
-              Начать тест
+              {/* Подпись зависит от того, был ли тест уже начат в этой
+                  вкладке: человек, вернувшийся на стартовую, должен понимать,
+                  что его ответы никуда не делись. */}
+              {current >= questions.length
+                ? "Посмотреть результат"
+                : shuffledOptions.length > 0
+                  ? "Продолжить тест"
+                  : "Начать тест"}
             </button>
 
             {/* Сноска - просьба владелицы 14.09.2026. Видна всегда и не
@@ -469,6 +529,25 @@ export default function Home() {
 
     return (
       <main className="mx-auto flex min-h-screen max-w-xl flex-col p-6 py-12">
+        {/* Ссылка на стартовую - см. naStartovuyu выше. */}
+        <button
+          type="button"
+          onClick={naStartovuyu}
+          className="mb-8 inline-flex items-center gap-1.5 self-start text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
+        >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            className="size-4 fill-none stroke-current"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M10 4L6 8l4 4" />
+          </svg>
+          На стартовую страницу
+        </button>
+
         {/* Блок 1 - результат. Про почту в нём ни слова: так решено в
             test-results.md. Блок 2 с полем ввода встанет ниже в фазе 4. */}
         <h2 className="text-xl font-semibold sm:text-2xl">{text.title}</h2>
@@ -495,6 +574,26 @@ export default function Home() {
 
           current + 1 потому, что внутри счёт идёт с нуля, а человеку привычно
           с единицы. */}
+      {/* Ссылка на стартовую - см. naStartovuyu выше. Тихая, чтобы не
+          спорить с вопросом за внимание, но находимая: вверху, где её ищут. */}
+      <button
+        type="button"
+        onClick={naStartovuyu}
+        className="mb-6 inline-flex items-center gap-1.5 self-start text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
+      >
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 16 16"
+          className="size-4 fill-none stroke-current"
+          strokeWidth="1.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <path d="M10 4L6 8l4 4" />
+        </svg>
+        На стартовую страницу
+      </button>
+
       <p className="text-sm text-priglushennyy">
         Вопрос {current + 1} из {questions.length}
       </p>
@@ -524,7 +623,10 @@ export default function Home() {
           onClick={goBack}
           className="mt-6 self-start text-sm text-priglushennyy underline"
         >
-          Назад
+          {/* Раньше подпись была «Назад». Переименовано 14.09.2026, когда
+              появилась ссылка на стартовую: две разные «назад» на одном
+              экране путались бы. */}
+          Предыдущий вопрос
         </button>
       )}
     </main>
