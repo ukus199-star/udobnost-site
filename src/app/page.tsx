@@ -244,7 +244,7 @@ export default function Home() {
               text-balance выравнивает длину строк при переносе: заголовок не
               оставит одно слово висеть на второй строке. */}
           <h1 className="animate-proyavlenie text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Узнаете, насколько вы удобны
+            Узнайте, насколько вы удобны
           </h1>
 
           {/* Обращение от первого лица - правка владелицы 14.09.2026: текст
