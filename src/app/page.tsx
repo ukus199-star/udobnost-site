@@ -165,6 +165,20 @@ export default function Home() {
   // кнопкой «Назад» и снова дошедший до конца, посчитался бы дважды.
   const resultSent = useRef(false);
 
+  // Раскрыт ли блок «Подробнее о тесте» на первом экране. По умолчанию
+  // свёрнут - решение владелицы 14.09.2026: объяснение не должно забирать
+  // внимание у заголовка, срока и кнопки.
+  //
+  // Здесь хранится только закрепление нажатием. Предпросмотр при наведении
+  // мыши сделан стилями и в этом значении не участвует: он временный.
+  const [podrobnee, setPodrobnee] = useState(false);
+
+  // Предпросмотр при наведении выключается сразу после того, как блок закрыли
+  // нажатием, и включается снова, когда мышь уйдёт. Без этого закрыть блок
+  // мышью было бы нельзя: курсор всё ещё над ссылкой, и наведение тут же
+  // открывало бы блок обратно.
+  const [bezPredprosmotra, setBezPredprosmotra] = useState(false);
+
   function start() {
     const id = makeRunId();
     runId.current = id;
@@ -230,15 +244,17 @@ export default function Home() {
   // Картинка появится первым блоком, когда владелица пришлёт референсы
   // сервиса «Ясно» - рисовать её до этого значило бы гадать о стиле.
   //
-  // Всё по центру - тоже её решение: центр собирает экран в одну спокойную
-  // точку, а не прижимает к краю.
+  // Всё по центру по горизонтали - тоже её решение: центр собирает экран в
+  // одну спокойную точку. По вертикали экран выровнен по верху, а не по
+  // центру: при раскрытии «Подробнее о тесте» растёт только низ страницы, и
+  // кнопка не уезжает из-под курсора.
   //
   // Блоки появляются по очереди, с шагом 70 мс. Шаг маленький намеренно:
   // это не представление, а ощущение, что страница собирается спокойно,
   // а не выпрыгивает целиком.
   if (!started) {
     return (
-      <main className="fon-myagkiy flex min-h-screen flex-col justify-center px-6 py-12">
+      <main className="fon-myagkiy flex min-h-screen flex-col px-6 pb-16 pt-[16vh]">
         <div className="mx-auto w-full max-w-chtenie text-center">
           {/* Заголовок - правки владелицы 14.09.2026: без слова «тест» и на
               ступень крупнее. Первая строка обращается к человеку, а не
@@ -274,53 +290,6 @@ export default function Home() {
             На прохождение - три минуты
           </p>
 
-          {/* Объяснение от первого лица, в блоке с мягкой тенью.
-
-              Содержание продиктовано владелицей 14.09.2026: что такое личные
-              границы, что такое удобность, откуда она берётся. Две формулировки
-              сверены с документами проекта:
-
-              - удобность описана как выбор («выбираем комфорт других»), а не
-                как изъян («пренебрегаем собой»). test-design.md: удобный
-                человек не чувствует себя больным, он чувствует себя хорошим;
-              - происхождение названо «часто ещё в детстве», без слова
-                «родители». test-results.md: не обвинять окружение - человек в
-                такой момент защищает своих, а не соглашается.
-
-              «Поможет определить» допустимо по voice/stop-words.md: это
-              участие, а не обещание результата.
-
-              Последняя строка защищает от главного риска теста из
-              test-design.md - социальной желательности: человек отвечает не
-              как живёт, а как хотел бы, и тест теряет смысл. Убирать нельзя. */}
-          <div
-            className="animate-proyavlenie ten-myagkaya mt-10 rounded-myagkiy bg-poverhnost px-6 py-7 text-left sm:px-9"
-            style={{ animationDelay: "140ms" }}
-          >
-            <p className="text-base leading-relaxed text-priglushennyy">
-              Я подготовила для вас двенадцать вопросов о самых обычных
-              ситуациях.
-            </p>
-            <p className="mt-3 text-base leading-relaxed text-priglushennyy">
-              У каждого человека есть личные границы - место, где заканчиваются
-              наши желания, силы и время и начинаются чужие.
-            </p>
-            <p className="mt-3 text-base leading-relaxed text-priglushennyy">
-              Удобность - это когда мы раз за разом выбираем комфорт других
-              людей, а не свой. Она складывается по разным причинам, часто ещё в
-              детстве, и у каждого устроена по-своему.
-            </p>
-            {/* Итог - тёмным: это ответ на «зачем мне это проходить», его
-                должны дочитать. */}
-            <p className="mt-5 text-base font-medium leading-relaxed text-tekst">
-              Тест поможет вам определить, как устроена ваша удобность.
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-priglushennyy">
-              Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
-              правильно.
-            </p>
-          </div>
-
           {/* Кнопка на телефоне во всю ширину - по ней попадают большим пальцем,
               на широком экране по размеру текста и по центру.
 
@@ -329,11 +298,129 @@ export default function Home() {
               там нет, и нажатие - единственный отклик, который увидят. */}
           <button
             onClick={start}
-            style={{ animationDelay: "210ms" }}
-            className="animate-proyavlenie mt-12 w-full rounded-myagkiy bg-akcent px-8 py-3.5 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm sm:w-auto"
+            style={{ animationDelay: "140ms" }}
+            className="animate-proyavlenie mt-10 w-full rounded-myagkiy bg-akcent px-8 py-3.5 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm sm:w-auto"
           >
             Начать тест
           </button>
+
+          {/* Инструкция вынесена из свёрнутого блока и видна всегда. Она
+              защищает от главного риска теста из test-design.md - социальной
+              желательности: человек отвечает не как живёт, а как хотел бы, и
+              тест теряет смысл. Спрятанную под «подробнее», её пропустит почти
+              каждый. */}
+          <p
+            className="animate-proyavlenie mx-auto mt-4 max-w-sm text-sm leading-relaxed text-priglushennyy"
+            style={{ animationDelay: "140ms" }}
+          >
+            Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
+            правильно.
+          </p>
+
+          {/* «Подробнее о тесте» - свёрнутый блок, решение владелицы 14.09.2026:
+              объяснение не должно забирать внимание у заголовка, срока и
+              кнопки. Стоит под кнопкой, чтобы при раскрытии кнопка не уезжала.
+
+              Как раскрывается:
+              - нажатием - везде, включая телефон; блок остаётся открытым;
+              - наведением мыши - только на компьютере, как предпросмотр. На
+                телефоне наведения нет: Tailwind включает hover-стили лишь на
+                устройствах, которые умеют наводить.
+
+              Высота анимируется через grid-template-rows от 0fr к 1fr. Высоту
+              «auto» напрямую анимировать нельзя, а строку сетки - можно, и без
+              подсчёта высоты в JavaScript. */}
+          <div
+            className="group animate-proyavlenie mt-8"
+            style={{ animationDelay: "210ms" }}
+            onMouseLeave={() => setBezPredprosmotra(false)}
+          >
+            <button
+              type="button"
+              aria-expanded={podrobnee}
+              aria-controls="podrobnee-o-teste"
+              onClick={() => {
+                if (podrobnee) {
+                  setPodrobnee(false);
+                  setBezPredprosmotra(true);
+                } else {
+                  setPodrobnee(true);
+                }
+              }}
+              className="inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
+            >
+              Подробнее о тесте
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                className={`size-4 fill-none stroke-current transition-transform duration-300 ${
+                  podrobnee
+                    ? "rotate-180"
+                    : bezPredprosmotra
+                      ? ""
+                      : "group-hover:rotate-180"
+                }`}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 6l4 4 4-4" />
+              </svg>
+            </button>
+
+            <div
+              id="podrobnee-o-teste"
+              aria-hidden={!podrobnee}
+              className={`grid transition-[grid-template-rows] duration-300 ease-out ${
+                podrobnee
+                  ? "grid-rows-[1fr]"
+                  : bezPredprosmotra
+                    ? "grid-rows-[0fr]"
+                    : "grid-rows-[0fr] group-hover:grid-rows-[1fr]"
+              }`}
+            >
+              {/* overflow-hidden прячет текст, пока строка сетки нулевая.
+                  Отступы внутри - запас для тени блока: без них её обрезало бы
+                  по краю. */}
+              <div className="overflow-hidden">
+                <div className="px-3 pb-8 pt-3 sm:px-4">
+                  {/* Содержание продиктовано владелицей 14.09.2026. Две
+                      формулировки сверены с документами проекта:
+                      - удобность описана как выбор («выбираем комфорт
+                        других»), а не как изъян. test-design.md: удобный
+                        человек не чувствует себя больным, он чувствует себя
+                        хорошим;
+                      - происхождение названо «часто ещё в детстве», без слова
+                        «родители». test-results.md: не обвинять окружение -
+                        человек в такой момент защищает своих.
+                      «Поможет определить» допустимо по voice/stop-words.md:
+                      это участие, а не обещание результата. */}
+                  <div className="ten-myagkaya rounded-myagkiy bg-poverhnost px-6 py-7 text-left sm:px-9">
+                    <p className="text-base leading-relaxed text-priglushennyy">
+                      Я подготовила для вас двенадцать вопросов о самых обычных
+                      ситуациях.
+                    </p>
+                    <p className="mt-3 text-base leading-relaxed text-priglushennyy">
+                      У каждого человека есть личные границы - место, где
+                      заканчиваются наши желания, силы и время и начинаются
+                      чужие.
+                    </p>
+                    <p className="mt-3 text-base leading-relaxed text-priglushennyy">
+                      Удобность - это когда мы раз за разом выбираем комфорт
+                      других людей, а не свой. Она складывается по разным
+                      причинам, часто ещё в детстве, и у каждого устроена
+                      по-своему.
+                    </p>
+                    {/* Итог - тёмным: это ответ на «зачем мне это проходить»,
+                        его должны дочитать. */}
+                    <p className="mt-5 text-base font-medium leading-relaxed text-tekst">
+                      Тест поможет вам определить, как устроена ваша удобность.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
     );
