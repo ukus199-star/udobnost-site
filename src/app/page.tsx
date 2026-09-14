@@ -263,12 +263,14 @@ export default function Home() {
             className="animate-proyavlenie ten-myagkaya mt-10 rounded-myagkiy bg-poverhnost px-6 py-7 sm:px-9"
             style={{ animationDelay: "70ms" }}
           >
-            <p className="text-lg leading-relaxed text-priglushennyy sm:text-xl">
+            {/* Описание на ступень мельче заголовка с запасом - правка владелицы
+                14.09.2026: крупным оно было навязчивым и спорило с заголовком
+                за первый взгляд. */}
+            <p className="text-base leading-relaxed text-priglushennyy sm:text-lg">
               Я подготовила для вас двенадцать вопросов о самых обычных
               ситуациях. Тест подсветит вам, как устроена ваша удобность.
-              Короткое описание - сразу после ответов.
             </p>
-            <p className="mt-4 text-base leading-relaxed text-priglushennyy">
+            <p className="mt-3 text-sm leading-relaxed text-priglushennyy">
               Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
               правильно.
             </p>
