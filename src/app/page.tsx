@@ -168,16 +168,7 @@ export default function Home() {
   // Раскрыт ли блок «Подробнее о тесте» на первом экране. По умолчанию
   // свёрнут - решение владелицы 14.09.2026: объяснение не должно забирать
   // внимание у заголовка, срока и кнопки.
-  //
-  // Здесь хранится только закрепление нажатием. Предпросмотр при наведении
-  // мыши сделан стилями и в этом значении не участвует: он временный.
   const [podrobnee, setPodrobnee] = useState(false);
-
-  // Предпросмотр при наведении выключается сразу после того, как блок закрыли
-  // нажатием, и включается снова, когда мышь уйдёт. Без этого закрыть блок
-  // мышью было бы нельзя: курсор всё ещё над ссылкой, и наведение тут же
-  // открывало бы блок обратно.
-  const [bezPredprosmotra, setBezPredprosmotra] = useState(false);
 
   function start() {
     const id = makeRunId();
@@ -246,8 +237,8 @@ export default function Home() {
   //
   // Всё по центру по горизонтали - тоже её решение: центр собирает экран в
   // одну спокойную точку. По вертикали экран выровнен по верху, а не по
-  // центру: при раскрытии «Подробнее о тесте» растёт только низ страницы, и
-  // кнопка не уезжает из-под курсора.
+  // центру: при раскрытии «Подробнее о тесте» заголовок и срок остаются на
+  // месте, а вниз уходит только то, что под блоком.
   //
   // Блоки появляются по очереди, с шагом 70 мс. Шаг маленький намеренно:
   // это не представление, а ощущение, что страница собирается спокойно,
@@ -274,7 +265,7 @@ export default function Home() {
               каждом устройстве свои и выпадают из палитры. aria-hidden - чтобы
               экранный диктор не зачитывал картинку, смысл уже в тексте. */}
           <p
-            className="animate-proyavlenie mt-5 inline-flex items-center gap-2 text-sm font-medium text-tekst"
+            className="animate-proyavlenie mt-5 flex items-center justify-center gap-2 text-sm font-medium text-tekst"
             style={{ animationDelay: "70ms" }}
           >
             <svg
@@ -290,75 +281,38 @@ export default function Home() {
             На прохождение - три минуты
           </p>
 
-          {/* Кнопка на телефоне во всю ширину - по ней попадают большим пальцем,
-              на широком экране по размеру текста и по центру.
-
-              Отклик в три ступени. Навели - кнопка темнеет и приподнимается на
-              точку. Нажали - вдавливается. Это важно для телефона: наведения
-              там нет, и нажатие - единственный отклик, который увидят. */}
-          <button
-            onClick={start}
-            style={{ animationDelay: "140ms" }}
-            className="animate-proyavlenie mt-10 w-full rounded-myagkiy bg-akcent px-8 py-3.5 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm sm:w-auto"
-          >
-            Начать тест
-          </button>
-
-          {/* Инструкция вынесена из свёрнутого блока и видна всегда. Она
-              защищает от главного риска теста из test-design.md - социальной
-              желательности: человек отвечает не как живёт, а как хотел бы, и
-              тест теряет смысл. Спрятанную под «подробнее», её пропустит почти
-              каждый. */}
-          <p
-            className="animate-proyavlenie mx-auto mt-4 max-w-sm text-sm leading-relaxed text-priglushennyy"
-            style={{ animationDelay: "140ms" }}
-          >
-            Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
-            правильно.
-          </p>
-
-          {/* «Подробнее о тесте» - свёрнутый блок, решение владелицы 14.09.2026:
+          {/* «Подробнее о тесте» - свёрнутый блок. Решения владелицы 14.09.2026:
               объяснение не должно забирать внимание у заголовка, срока и
-              кнопки. Стоит под кнопкой, чтобы при раскрытии кнопка не уезжала.
+              кнопки, а стоять должно между сроком и кнопкой.
 
-              Как раскрывается:
-              - нажатием - везде, включая телефон; блок остаётся открытым;
-              - наведением мыши - только на компьютере, как предпросмотр. На
-                телефоне наведения нет: Tailwind включает hover-стили лишь на
-                устройствах, которые умеют наводить.
+              Раскрывается только нажатием - и на телефоне, и на компьютере.
+              Предпросмотр при наведении мыши сначала был и убран намеренно:
+              блок стоит над кнопкой и, раскрываясь, сдвигает её вниз. Мышь,
+              идущая от ссылки к кнопке, выходила бы из блока, он схлопывался,
+              кнопка прыгала обратно под курсор - и всё дёргалось по кругу.
 
               Высота анимируется через grid-template-rows от 0fr к 1fr. Высоту
               «auto» напрямую анимировать нельзя, а строку сетки - можно, и без
               подсчёта высоты в JavaScript. */}
           <div
-            className="group animate-proyavlenie mt-8"
-            style={{ animationDelay: "210ms" }}
-            onMouseLeave={() => setBezPredprosmotra(false)}
+            className="animate-proyavlenie mt-6"
+            style={{ animationDelay: "140ms" }}
           >
             <button
               type="button"
               aria-expanded={podrobnee}
               aria-controls="podrobnee-o-teste"
-              onClick={() => {
-                if (podrobnee) {
-                  setPodrobnee(false);
-                  setBezPredprosmotra(true);
-                } else {
-                  setPodrobnee(true);
-                }
-              }}
-              className="inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
+              onClick={() => setPodrobnee(!podrobnee)}
+              className="group inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
             >
               Подробнее о тесте
+              {/* Стрелка разворачивается, когда блок открыт. При наведении
+                  чуть опускается - подсказка, что здесь что-то раскроется. */}
               <svg
                 aria-hidden="true"
                 viewBox="0 0 16 16"
                 className={`size-4 fill-none stroke-current transition-transform duration-300 ${
-                  podrobnee
-                    ? "rotate-180"
-                    : bezPredprosmotra
-                      ? ""
-                      : "group-hover:rotate-180"
+                  podrobnee ? "rotate-180" : "group-hover:translate-y-0.5"
                 }`}
                 strokeWidth="1.5"
                 strokeLinecap="round"
@@ -372,11 +326,7 @@ export default function Home() {
               id="podrobnee-o-teste"
               aria-hidden={!podrobnee}
               className={`grid transition-[grid-template-rows] duration-300 ease-out ${
-                podrobnee
-                  ? "grid-rows-[1fr]"
-                  : bezPredprosmotra
-                    ? "grid-rows-[0fr]"
-                    : "grid-rows-[0fr] group-hover:grid-rows-[1fr]"
+                podrobnee ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
               }`}
             >
               {/* overflow-hidden прячет текст, пока строка сетки нулевая.
@@ -421,6 +371,37 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* Кнопка на телефоне во всю ширину - по ней попадают большим пальцем,
+              на широком экране по размеру текста и по центру.
+
+              block и mx-auto - чтобы кнопка всегда стояла отдельной строкой.
+              Раньше она была строчным элементом и на широком экране вставала в
+              одну строку со сроком - они наезжали друг на друга.
+
+              Отклик в три ступени. Навели - кнопка темнеет и приподнимается на
+              точку. Нажали - вдавливается. Это важно для телефона: наведения
+              там нет, и нажатие - единственный отклик, который увидят. */}
+          <button
+            onClick={start}
+            style={{ animationDelay: "210ms" }}
+            className="animate-proyavlenie mx-auto mt-6 block w-full rounded-myagkiy bg-akcent px-8 py-3.5 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm sm:w-auto"
+          >
+            Начать тест
+          </button>
+
+          {/* Инструкция вынесена из свёрнутого блока и видна всегда. Она
+              защищает от главного риска теста из test-design.md - социальной
+              желательности: человек отвечает не как живёт, а как хотел бы, и
+              тест теряет смысл. Спрятанную под «подробнее», её пропустит почти
+              каждый. */}
+          <p
+            className="animate-proyavlenie mx-auto mt-4 max-w-sm text-sm leading-relaxed text-priglushennyy"
+            style={{ animationDelay: "210ms" }}
+          >
+            Выбирайте то, как вы поступаете на самом деле, а не то, как было бы
+            правильно.
+          </p>
         </div>
       </main>
     );
