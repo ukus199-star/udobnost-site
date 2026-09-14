@@ -551,7 +551,7 @@ export default function Home() {
                 aria-expanded={podrobnee}
                 aria-controls="podrobnee-o-teste"
                 onClick={() => setPodrobnee(!podrobnee)}
-                className="group inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
+                className="group -my-1 inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-3 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
               >
                 Подробнее о тесте
                 {/* Стрелка разворачивается, когда блок открыт. При наведении
@@ -660,7 +660,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={projtiEshchyoRaz}
-                className="animate-proyavlenie mt-4 inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
+                className="animate-proyavlenie -mb-1 mt-3 inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-3 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
                 style={{ animationDelay: "280ms" }}
               >
                 <svg
@@ -774,7 +774,12 @@ export default function Home() {
                   поисковика и у части экранных дикторов слова слипаются:
                   «так:вы спасаете». Нашла проверка в Chrome. */}
               {podpis && " "}
-              <span className={`block text-4xl sm:text-5xl ${podpis ? "mt-2" : ""}`}>
+              {/* На экранах уже 360 точек - на ступень мельче: при ширине 320
+                  «Вы соответствуете» не влезало на 4 точки, и страница
+                  ездила вбок. Нашла проверка фазы 6. */}
+              <span
+                className={`block text-3xl min-[360px]:text-4xl sm:text-5xl ${podpis ? "mt-2" : ""}`}
+              >
                 {sposob}
               </span>
             </h1>
@@ -829,7 +834,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={projtiEshchyoRaz}
-                className="inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
+                className="-my-1 inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-3 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
               >
                 <svg
                   aria-hidden="true"
@@ -848,7 +853,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={naStartovuyu}
-                className="inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
+                className="-my-1 inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-3 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
               >
                 <svg
                   aria-hidden="true"
@@ -900,7 +905,11 @@ export default function Home() {
         <button
           type="button"
           onClick={naStartovuyu}
-          className="inline-flex items-center gap-1.5 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
+          // -my-3 py-3: зона нажатия 44 точки при прежнем виде. Текст высотой
+          // 20 точек, по нему трудно попасть пальцем, а отступы внутри
+          // кнопки гасятся такими же отрицательными снаружи - ничего не
+          // сдвигается. Нашла проверка фазы 6; так же у всех тихих ссылок.
+          className="-my-3 inline-flex items-center gap-1.5 py-3 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
         >
           <svg
             aria-hidden="true"
@@ -1040,7 +1049,7 @@ export default function Home() {
           <button
             type="button"
             onClick={goBack}
-            className="mt-8 inline-flex items-center gap-1.5 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
+            className="-mb-3 mt-5 inline-flex items-center gap-1.5 py-3 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
           >
             <svg
               aria-hidden="true"
