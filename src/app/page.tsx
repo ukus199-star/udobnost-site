@@ -127,6 +127,25 @@ function leadingType(counts: Map<TypeCode, number>): TypeCode | null {
   return leader;
 }
 
+/**
+ * Разбить заголовок результата по двоеточию: подпись и сам способ.
+ *
+ * «Ваша удобность устроена так: вы спасаете.» -> подпись «Ваша удобность
+ * устроена так:», способ «вы спасаете.» На экране подпись мелко, способ
+ * крупно - в глаза сначала попадает сам способ. Решение фазы 4 плана дизайна.
+ *
+ * Ни одно слово не меняется, и регистр тоже: «вы спасаете» остаётся со
+ * строчной. Тексты по шапке results.ts переносятся дословно, правится только
+ * набор.
+ *
+ * Заголовок без двоеточия - «Похоже, отказывать вы умеете.» - идёт целиком.
+ */
+function razbitZagolovok(title: string): [string | null, string] {
+  const i = title.indexOf(":");
+  if (i === -1) return [null, title];
+  return [title.slice(0, i + 1), title.slice(i + 1).trim()];
+}
+
 export default function Home() {
   // useState - это память страницы. Каждый вызов даёт две вещи: текущее
   // значение и способ его изменить. Меняем значение - страница
@@ -250,6 +269,32 @@ export default function Home() {
     window.history.pushState(null, "", "?shag=test");
   }
 
+  // Пройти тест ещё раз - заказ владелицы 14.09.2026: тест - лид-магнит в
+  // немного игровом формате, людям может быть интересно ответить по-другому.
+  //
+  // Это новое прохождение, а не продолжение старого: ответы сбрасываются,
+  // варианты перемешиваются заново, номер новый, и в статистику уходит новое
+  // событие «старт». Статистика считает прохождения, а не людей - так решено
+  // ещё в фазе 6А основного плана.
+  //
+  // С экрана результата - сразу на первый вопрос, адрес уже помечен как тест,
+  // лишний шаг в истории не нужен. Со стартовой - как обычный вход в тест.
+  function projtiEshchyoRaz() {
+    const id = makeRunId();
+    runId.current = id;
+    resultSent.current = false;
+    lastAnswerAt.current = 0;
+    setAnswers(questions.map(() => null));
+    setCurrent(0);
+    setShuffledOptions(questions.map((question) => shuffle(question.options)));
+    sendEvent({ runId: id, kind: "start" });
+    if (!started) {
+      setStarted(true);
+      window.history.pushState(null, "", "?shag=test");
+    }
+    window.scrollTo({ top: 0 });
+  }
+
   // Ссылка «На стартовую страницу» на экранах вопроса и результата. Не
   // переключает экран сама, а делает то же, что кнопка «назад» браузера:
   // так история остаётся честной, и «вперёд» после неё вернёт в тест.
@@ -316,7 +361,12 @@ export default function Home() {
     const next = [...answers];
     next[current] = type;
     setAnswers(next);
-    perehodK(() => setCurrent(current + 1));
+    // Наверх при смене вопроса: на телефоне после длинного вопроса следующий
+    // - и экран результата - открывались бы прокрученными вниз.
+    perehodK(() => {
+      setCurrent(current + 1);
+      window.scrollTo({ top: 0 });
+    });
 
     // Номер вопроса отправляем от единицы - так же, как его видит человек.
     // Какой именно вариант выбран, не отправляем: нам важно, докуда дошли,
@@ -347,7 +397,10 @@ export default function Home() {
 
   function goBack() {
     if (idetPerehod.current) return;
-    perehodK(() => setCurrent(current - 1));
+    perehodK(() => {
+      setCurrent(current - 1);
+      window.scrollTo({ top: 0 });
+    });
   }
 
   // ─── Экран 1. Приветствие ───────────────────────────────────────────────
@@ -557,6 +610,31 @@ export default function Home() {
                   : "Начать тест"}
             </button>
 
+            {/* Тест уже пройден в этой вкладке: главная кнопка ведёт к
+                результату, а под ней - повторное прохождение. Тихой ссылкой,
+                а не второй кнопкой: главное действие на экране одно. */}
+            {current >= questions.length && (
+              <button
+                type="button"
+                onClick={projtiEshchyoRaz}
+                className="animate-proyavlenie mt-4 inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
+                style={{ animationDelay: "280ms" }}
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 16 16"
+                  className="size-4 fill-none stroke-current"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M13 8a5 5 0 1 1-1.46-3.54" />
+                  <path d="M13 2.5V5h-2.5" />
+                </svg>
+                Пройти тест ещё раз
+              </button>
+            )}
+
             {/* Сноска - просьба владелицы 14.09.2026. Видна всегда и не
                 прячется под «Подробнее»: это оговорка о том, чем тест является,
                 а чем нет, и её должен увидеть каждый, кто нажимает кнопку.
@@ -579,53 +657,169 @@ export default function Home() {
 
   // ─── Экран 3. Результат ─────────────────────────────────────────────────
   //
-  // Результат считается заново при каждой отрисовке, а не запоминается: человек
-  // может вернуться «Назад» и сменить ответ, и запомненный результат остался бы
-  // старым. Тот же приём, что у счётчика прогресса ниже.
+  // Фаза 4 плана дизайна, заказ владелицы 14.09.2026: экран похож на
+  // стартовую, текст в блоке, а не на белом фоне.
   //
-  // Экран не центрируется по вертикали, в отличие от двух других: текст здесь
-  // длинный, и центрирование увело бы его начало выше видимой области.
+  // Две зоны цветом фона, как на стартовой:
+  //   1. оливковая полоса - маленький рисунок границы, «Ваш результат» и
+  //      название способа. Рисунок тот же, что в начале, - связывает начало и
+  //      конец теста;
+  //   2. светлая зона - текст в блоке с мягкой тенью и под ним две тихие
+  //      ссылки.
+  //
+  // Структура - по business/products/test-results.md: блок 1 - результат,
+  // про почту в нём ни слова; блок 2 с полем почты - отдельно и ниже, мелко.
+  // Сама форма - фаза 4 основного плана, закрыта шлюзом этапа до модуля 4,
+  // урока 5. Под неё сейчас оставлен отступ.
+  //
+  // Результат считается заново при каждой отрисовке, а не запоминается:
+  // человек может вернуться и сменить ответ, и запомненный результат остался
+  // бы старым.
   if (current >= questions.length) {
     const screen = scoreAnswers(answers);
     if (screen === null) {
       return (
-        <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center p-6">
+        <main className="flex min-h-screen flex-col items-center justify-center bg-poverhnost p-6">
           <p className="text-priglushennyy">Считать нечего: ответов нет.</p>
         </main>
       );
     }
 
     const text = resultTexts[screen];
+    const [podpis, sposob] = razbitZagolovok(text.title);
+
+    // Последний абзац - финальная строка: вопрос, который у человека только
+    // что возник сам (test-results.md, «Принципы»). Набирается отдельно.
+    const abzacy = text.paragraphs.slice(0, -1);
+    const finalnaya = text.paragraphs[text.paragraphs.length - 1];
 
     return (
-      <main className="mx-auto flex min-h-screen max-w-xl flex-col p-6 py-12">
-        {/* Ссылка на стартовую - см. naStartovuyu выше. */}
-        <button
-          type="button"
-          onClick={naStartovuyu}
-          className="mb-8 inline-flex items-center gap-1.5 self-start text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
-        >
-          <svg
-            aria-hidden="true"
-            viewBox="0 0 16 16"
-            className="size-4 fill-none stroke-current"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M10 4L6 8l4 4" />
-          </svg>
-          На стартовую страницу
-        </button>
+      <main className="flex min-h-screen flex-col bg-poverhnost">
+        {/* ── Зона 1: результат ─────────────────────────────────────────── */}
+        <section className="bg-akcent-myagkiy px-6 pb-12 pt-10 sm:pt-14">
+          <div className="mx-auto w-full max-w-chtenie text-center">
+            {/* Рисунок границы на повёрнутой плашке - как на стартовой, но
+                меньше: здесь главное не он, а текст. */}
+            <div className="animate-proyavlenie mx-auto mb-8 w-fit">
+              <div className="ten-myagkaya -rotate-2 rounded-myagkiy bg-poverhnost px-6 py-4">
+                <Granica className="block h-auto w-32 rotate-2 sm:w-36" />
+              </div>
+            </div>
 
-        {/* Блок 1 - результат. Про почту в нём ни слова: так решено в
-            test-results.md. Блок 2 с полем ввода встанет ниже в фазе 4. */}
-        <h2 className="text-xl font-semibold sm:text-2xl">{text.title}</h2>
-        {text.paragraphs.map((paragraph, index) => (
-          <p key={index} className="mt-4 text-priglushennyy">
-            {paragraph}
-          </p>
-        ))}
+            <p
+              className="animate-proyavlenie text-sm text-priglushennyy"
+              style={{ animationDelay: "70ms" }}
+            >
+              Ваш результат
+            </p>
+
+            {/* Заголовок одним h1, хотя набран двумя строками: экранный
+                диктор прочтёт его целиком, как фразу. */}
+            <h1
+              className="animate-proyavlenie mt-3 text-balance font-semibold leading-tight tracking-tight"
+              style={{ animationDelay: "140ms" }}
+            >
+              {podpis && (
+                <span className="block text-lg font-medium text-priglushennyy sm:text-xl">
+                  {podpis}
+                </span>
+              )}
+              {/* Пробел между частями. На экране не виден - строки стоят
+                  одна под другой, - но без него при копировании, в заголовке
+                  поисковика и у части экранных дикторов слова слипаются:
+                  «так:вы спасаете». Нашла проверка в Chrome. */}
+              {podpis && " "}
+              <span className={`block text-4xl sm:text-5xl ${podpis ? "mt-2" : ""}`}>
+                {sposob}
+              </span>
+            </h1>
+          </div>
+        </section>
+
+        {/* ── Зона 2: текст и что дальше ───────────────────────────────── */}
+        <section className="px-6 pb-16 pt-10">
+          <div className="mx-auto w-full max-w-chtenie">
+            {/* Текст в блоке с мягкой тенью - как «Подробнее о тесте» на
+                стартовой. По левому краю: это три абзаца подряд, а
+                центрированный длинный текст читать тяжело.
+
+                Ритм: абзацы крупнее, чем на стартовой, с интервалом в
+                полторы строки - это самый важный текст теста, его читают
+                медленно. */}
+            <div
+              className="animate-proyavlenie ten-myagkaya rounded-myagkiy bg-poverhnost px-6 py-8 sm:px-9"
+              style={{ animationDelay: "210ms" }}
+            >
+              {abzacy.map((abzac, index) => (
+                <p
+                  key={index}
+                  className={`text-base leading-relaxed text-priglushennyy sm:text-lg ${
+                    index > 0 ? "mt-4" : ""
+                  }`}
+                >
+                  {abzac}
+                </p>
+              ))}
+
+              {/* Финальная строка - тёмным и за тонкой линией. Это точка
+                  перехода к письму: после неё человек решает сам. Линия - тот
+                  же мотив, что во всём оформлении: мягкая форма, ясная
+                  граница. */}
+              <p className="mt-6 border-t border-granica pt-6 text-base font-medium leading-relaxed text-tekst sm:text-lg">
+                {finalnaya}
+              </p>
+            </div>
+
+            {/* Здесь встанет блок 2 - поле почты «Куда прислать разбор?».
+                Пока - только отступ: поле, которое никуда не отправляет, хуже,
+                чем никакого.
+
+                Ссылки ниже - тихие, а не кнопки: главный шаг после результата
+                - письмо с разбором, и повторное прохождение не должно его
+                перебивать, когда форма появится. */}
+            <div
+              className="animate-proyavlenie mt-16 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-8"
+              style={{ animationDelay: "280ms" }}
+            >
+              <button
+                type="button"
+                onClick={projtiEshchyoRaz}
+                className="inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm font-medium text-akcent transition-colors duration-200 hover:text-akcent-naveden"
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 16 16"
+                  className="size-4 fill-none stroke-current"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M13 8a5 5 0 1 1-1.46-3.54" />
+                  <path d="M13 2.5V5h-2.5" />
+                </svg>
+                Пройти тест ещё раз
+              </button>
+
+              <button
+                type="button"
+                onClick={naStartovuyu}
+                className="inline-flex items-center gap-1.5 rounded-myagkiy px-3 py-2 text-sm text-priglushennyy transition-colors duration-200 hover:text-tekst"
+              >
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 16 16"
+                  className="size-4 fill-none stroke-current"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10 4L6 8l4 4" />
+                </svg>
+                На стартовую страницу
+              </button>
+            </div>
+          </div>
+        </section>
       </main>
     );
   }
