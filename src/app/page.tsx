@@ -219,6 +219,29 @@ export default function Home() {
   const idetPerehod = useRef(false);
   const taymerPerehoda = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Фокус после смены экрана с клавиатуры - фаза 5 плана дизайна.
+  //
+  // Нажатая кнопка при смене экрана исчезает, фокус проваливается в начало
+  // страницы, и человек, который ходит по ней клавишей Tab, листал бы её
+  // заново с самого верха - на каждом из двенадцати вопросов. Поэтому фокус
+  // ставится на заголовок нового экрана: следующий Tab ведёт к первому
+  // варианту, а экранный диктор сразу зачитывает новый вопрос.
+  //
+  // Только если нажимали с клавиатуры. Мыши и пальцу фокус не нужен. Отличает
+  // клавиатуру поле detail: у щелчка это число нажатий, у Enter и пробела -
+  // ноль.
+  const fokusNaZagolovok = useRef(false);
+  function sKlaviatury(event: { detail: number }) {
+    return event.detail === 0;
+  }
+  useEffect(() => {
+    if (!fokusNaZagolovok.current) return;
+    fokusNaZagolovok.current = false;
+    document
+      .querySelector<HTMLElement>("[data-zagolovok-ekrana]")
+      ?.focus({ preventScroll: true });
+  }, [started, current]);
+
   // Кнопка «назад» браузера и жест назад на телефоне - просьба владелицы
   // 14.09.2026: человек, нажавший «Начать тест», должен суметь вернуться на
   // стартовую страницу, а не вылететь с сайта.
@@ -264,7 +287,7 @@ export default function Home() {
     }
   }, []);
 
-  function start() {
+  function start(event: { detail: number }) {
     // Тест уже начат в этой вкладке, человек вернулся на стартовую и нажал
     // кнопку снова - продолжаем, а не начинаем заново. Ответы остаются,
     // порядок вариантов не перемешивается повторно, номер прохождения прежний.
@@ -278,6 +301,7 @@ export default function Home() {
       setShuffledOptions(questions.map((question) => shuffle(question.options)));
       sendEvent({ runId: id, kind: "start" });
     }
+    fokusNaZagolovok.current = sKlaviatury(event);
     setStarted(true);
     window.history.pushState(null, "", "?shag=test");
   }
@@ -292,7 +316,8 @@ export default function Home() {
   //
   // С экрана результата - сразу на первый вопрос, адрес уже помечен как тест,
   // лишний шаг в истории не нужен. Со стартовой - как обычный вход в тест.
-  function projtiEshchyoRaz() {
+  function projtiEshchyoRaz(event: { detail: number }) {
+    fokusNaZagolovok.current = sKlaviatury(event);
     const id = makeRunId();
     runId.current = id;
     resultSent.current = false;
@@ -311,7 +336,8 @@ export default function Home() {
   // Ссылка «На стартовую страницу» на экранах вопроса и результата. Не
   // переключает экран сама, а делает то же, что кнопка «назад» браузера:
   // так история остаётся честной, и «вперёд» после неё вернёт в тест.
-  function naStartovuyu() {
+  function naStartovuyu(event: { detail: number }) {
+    fokusNaZagolovok.current = sKlaviatury(event);
     window.history.back();
   }
 
@@ -351,7 +377,7 @@ export default function Home() {
   // clickedAt - время самого клика, оно приходит вместе с событием. Спрашивать
   // время у системы здесь нельзя: React требует, чтобы внутри компонента не было
   // ничего, что возвращает разное при каждом вызове.
-  function choose(type: TypeCode, clickedAt: number) {
+  function choose(type: TypeCode, clickedAt: number, klaviatura: boolean) {
     // Слова ещё разлетаются - нажатие по уходящему вопросу не считается.
     if (idetPerehod.current) return;
 
@@ -363,6 +389,7 @@ export default function Home() {
     // отсекается.
     if (clickedAt - lastAnswerAt.current < 350) return;
     lastAnswerAt.current = clickedAt;
+    fokusNaZagolovok.current = klaviatura;
 
     // Массив не меняем на месте, а делаем новый с одной изменённой ячейкой.
     // React сравнивает старое значение с новым по ссылке: если подправить
@@ -408,8 +435,9 @@ export default function Home() {
     });
   }
 
-  function goBack() {
+  function goBack(event: { detail: number }) {
     if (idetPerehod.current) return;
+    fokusNaZagolovok.current = sKlaviatury(event);
     perehodK(() => {
       setCurrent(current - 1);
       window.scrollTo({ top: 0 });
@@ -463,6 +491,8 @@ export default function Home() {
             {/* Заголовок - правки владелицы 14.09.2026: без слова «тест» и
                 крупно. text-balance выравнивает длину строк при переносе. */}
             <h1
+              data-zagolovok-ekrana
+              tabIndex={-1}
               className="animate-proyavlenie text-balance text-4xl font-semibold leading-tight tracking-tight sm:text-5xl"
               style={{ animationDelay: "70ms" }}
             >
@@ -729,6 +759,8 @@ export default function Home() {
             {/* Заголовок одним h1, хотя набран двумя строками: экранный
                 диктор прочтёт его целиком, как фразу. */}
             <h1
+              data-zagolovok-ekrana
+              tabIndex={-1}
               className="animate-proyavlenie mt-3 text-balance font-semibold leading-tight tracking-tight"
               style={{ animationDelay: "140ms" }}
             >
@@ -933,7 +965,11 @@ export default function Home() {
           key={current}
           className={perehod ? "razlet pointer-events-none" : undefined}
         >
-          <h2 className="mt-6 text-lg font-medium leading-snug text-tekst sm:text-xl">
+          <h2
+            data-zagolovok-ekrana
+            tabIndex={-1}
+            className="mt-6 text-lg font-medium leading-snug text-tekst sm:text-xl"
+          >
             <Slova tekst={question.situation} nachalo={0} shag={shag} />
           </h2>
 
@@ -959,7 +995,9 @@ export default function Home() {
                   key={option.type}
                   type="button"
                   aria-pressed={vybran}
-                  onClick={(event) => choose(option.type, event.timeStamp)}
+                  onClick={(event) =>
+                    choose(option.type, event.timeStamp, sKlaviatury(event))
+                  }
                   className={`group flex min-h-14 w-full items-center gap-3 rounded-myagkiy border px-4 py-3.5 text-left text-base leading-snug text-tekst transition duration-200 hover:-translate-y-0.5 hover:border-akcent hover:shadow-sm active:translate-y-0 active:scale-[0.99] active:shadow-none ${
                     vybran
                       ? "border-akcent bg-akcent-myagkiy"

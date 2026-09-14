@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- Иконка вкладки: рисунок границы с первого экрана, упрощённый до
+       размера 16 точек. Круг - человек, сплошная дуга - его граница, слева в
+       ней разрыв. Кружки, которые проходят через разрыв, в таком размере
+       превращаются в пятна, поэтому их нет - остался сам разрыв.
+       Цвета из палитры globals.css, в тёмной теме свои. -->
+  <style>
+    .krug { fill: #eef0e2; }
+    .liniya { stroke: #5a6942; }
+    .tochka { fill: #5a6942; }
+    @media (prefers-color-scheme: dark) {
+      .krug { fill: #2a2e1f; }
+      .liniya { stroke: #a9b688; }
+      .tochka { fill: #a9b688; }
+    }
+  </style>
+  <circle class="krug" cx="16" cy="16" r="13" />
+  <!-- Разрыв слева - дуга от 150 до 230 градусов, как в granica.tsx. -->
+  <path class="liniya" d="M7.64 6.04 A13 13 0 1 1 4.74 22.5" fill="none" stroke-width="2.5" stroke-linecap="round" />
+  <circle class="tochka" cx="18" cy="14.5" r="3.5" />
+</svg>

@@ -248,3 +248,11 @@ body {
   outline: 2px solid var(--akcent);
   outline-offset: 2px;
 }
+
+/* Заголовок экрана получает фокус сам, когда экран сменили с клавиатуры, -
+   см. fokusNaZagolovok в page.tsx. Нажать заголовок нельзя, и рамка вокруг
+   текста выглядела бы как ещё одна кнопка. Следующий Tab уводит фокус на
+   вариант ответа, и рамка появляется уже там. */
+[data-zagolovok-ekrana]:focus-visible {
+  outline: none;
+}
