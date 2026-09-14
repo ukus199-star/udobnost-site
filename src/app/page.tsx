@@ -223,9 +223,12 @@ export default function Home() {
 
   // ─── Экран 1. Приветствие ───────────────────────────────────────────────
   //
-  // Экран отвечает на вопросы, которые человек задаёт себе за первые три
-  // секунды: что это, сколько займёт, что делать. Отсюда иерархия: заголовок,
-  // описание, срок, кнопка - и ничего сверх.
+  // Экран отвечает на вопросы, которые человек задаёт себе за первые секунды:
+  // что это и что делать. Отсюда иерархия: заголовок, описание, кнопка - и
+  // ничего сверх.
+  //
+  // Всё по центру - решение владелицы 14.09.2026. Первый экран короткий, и
+  // центр собирает его в одну спокойную точку, а не прижимает к краю.
   //
   // Блоки появляются по очереди, с шагом 70 мс. Шаг маленький намеренно:
   // это не представление, а ощущение, что страница собирается спокойно,
@@ -233,9 +236,17 @@ export default function Home() {
   if (!started) {
     return (
       <main className="fon-myagkiy flex min-h-screen flex-col justify-center px-6 py-12">
-        <div className="mx-auto w-full max-w-chtenie">
-          <h1 className="animate-proyavlenie text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
-            Насколько вы удобны
+        <div className="mx-auto w-full max-w-chtenie text-center">
+          {/* Заголовок описывает тест, а не называет его: голое «Насколько вы
+              удобны» первой строкой читалось как вопрос без контекста.
+
+              «Покажет», а не «определит»: «определит» звучит как диагноз, а
+              принцип текстов проекта - ни одного обещания и ни одной оценки.
+
+              text-balance выравнивает длину строк при переносе: заголовок не
+              оставит одно слово висеть на второй строке. */}
+          <h1 className="animate-proyavlenie text-balance text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+            Тест, который покажет, насколько вы удобны
           </h1>
 
           <p
@@ -246,27 +257,18 @@ export default function Home() {
             как вы поступаете на самом деле, а не к тому, как считаете правильным.
           </p>
 
-          {/* Цена входа. «Двенадцать ситуаций» звучит дольше, чем «три минуты»:
-              человек охотнее начинает, когда знает, сколько это займёт. */}
-          <p
-            className="animate-proyavlenie mt-4 text-sm text-priglushennyy"
-            style={{ animationDelay: "140ms" }}
-          >
-            Три минуты.
-          </p>
-
           {/* Кнопка на телефоне во всю ширину - по ней попадают большим пальцем,
-              на широком экране по размеру текста.
+              на широком экране по размеру текста и по центру.
 
               Отклик в три ступени. Навели - кнопка темнеет и приподнимается на
               точку. Нажали - вдавливается. Это важно для телефона: наведения
               там нет, и нажатие - единственный отклик, который увидят. */}
           <button
             onClick={start}
-            style={{ animationDelay: "210ms" }}
+            style={{ animationDelay: "140ms" }}
             className="animate-proyavlenie mt-12 w-full rounded-myagkiy bg-akcent px-8 py-3.5 text-base font-medium text-poverhnost shadow-sm transition duration-200 hover:-translate-y-px hover:bg-akcent-naveden hover:shadow-md active:translate-y-0 active:scale-[0.98] active:shadow-sm sm:w-auto"
           >
-            Начать
+            Начать тест
           </button>
         </div>
       </main>
