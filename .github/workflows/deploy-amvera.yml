@@ -10,8 +10,9 @@
 # udobnost-site -> этот файл отправляет дальше на Amvera -> Amvera собирает
 # и обновляет сайт. Нажимать в кабинете ничего не нужно.
 #
-# Пароль от Amvera лежит в секретах репозитория под именем AMVERA_PASSWORD.
-# GitHub хранит его зашифрованным, в код он не попадает и в выводе команд
+# Вход на Amvera - по ключу SSH. Закрытая часть ключа лежит в секретах
+# репозитория под именем AMVERA_SSH_KEY, открытая - в личном кабинете Amvera.
+# GitHub хранит секрет зашифрованным, в код он не попадает и в выводе команд
 # заменяется звёздочками.
 
 name: Отправить на Amvera
@@ -37,32 +38,34 @@ jobs:
 
       - name: Отправить в репозиторий Amvera
         env:
-          AMVERA_PASSWORD: ${{ secrets.AMVERA_PASSWORD }}
+          AMVERA_SSH_KEY: ${{ secrets.AMVERA_SSH_KEY }}
         run: |
           set -e
 
-          LOGIN="ula-star"
-          PROEKT="my-work-code"
-
-          if [ -z "$AMVERA_PASSWORD" ]; then
-            echo "Нет секрета AMVERA_PASSWORD."
+          if [ -z "$AMVERA_SSH_KEY" ]; then
+            echo "Нет секрета AMVERA_SSH_KEY."
             echo "Настройки репозитория -> Secrets and variables -> Actions."
             exit 1
           fi
 
-          # Пароль не пишем в адрес репозитория: адреса попадают в вывод
-          # команд и в сообщения об ошибках. Вместо этого git спрашивает
-          # логин и пароль у маленькой подставной программы ниже.
-          # Адрес без .git на конце: у Amvera репозиторий называется именно
-          # так. С .git она отвечает "repository not found".
+          # Почему ключ, а не пароль. До 11.09.2026 отправка шла по паролю от
+          # аккаунта Amvera. С 14.09 Amvera отвечала «Authentication failed»,
+          # хотя тем же паролем владелица входила в кабинет, - и на старом
+          # адресе git.amvera.ru, и на новом git.msk0.amvera.ru. Совпало со
+          # сбоем региона Moscow-0, но и после его починки 16.09 пароль не
+          # приняли. Ключ не зависит от пароля и не меняется при его смене.
+          mkdir -p ~/.ssh
+          printf '%s\n' "$AMVERA_SSH_KEY" > ~/.ssh/amvera
+          chmod 600 ~/.ssh/amvera
+
+          # Адрес - из кабинета: проект, раздел «Репозиторий», строка
+          # «Использовать как основной репозиторий по SSH».
           #
-          # Сервер git.msk0.amvera.ru, а не git.amvera.ru. Amvera перенесла
-          # репозиторий; старый адрес с 14.09.2026 отвечает "Authentication
-          # failed" на верный пароль. Новый адрес - в кабинете, проект,
-          # раздел «Репозиторий», строка «Использовать как основной
-          # репозиторий». Снова «Authentication failed» - первым делом
-          # сверить адрес там.
-          git -c credential.helper='!f() { echo "username=ula-star"; echo "password=$AMVERA_PASSWORD"; }; f' \
-              push --force "https://git.msk0.amvera.ru/$LOGIN/$PROEKT" HEAD:master
+          # accept-new: машина GitHub каждый раз новая и сервер Amvera видит
+          # впервые, поэтому его отпечаток принимается без вопроса. Риск
+          # подмены сервера здесь невелик: уходит код публичного
+          # репозитория, а закрытый ключ при входе по SSH не передаётся.
+          git -c core.sshCommand="ssh -i ~/.ssh/amvera -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+              push --force "git@git.msk0.amvera.ru:ula-star/my-work-code" HEAD:master
 
           echo "Отправлено. Amvera собирает ветку master и запускает сборку сама."
