@@ -55,7 +55,14 @@ jobs:
           # логин и пароль у маленькой подставной программы ниже.
           # Адрес без .git на конце: у Amvera репозиторий называется именно
           # так. С .git она отвечает "repository not found".
+          #
+          # Сервер git.msk0.amvera.ru, а не git.amvera.ru. Amvera перенесла
+          # репозиторий; старый адрес с 14.09.2026 отвечает "Authentication
+          # failed" на верный пароль. Новый адрес - в кабинете, проект,
+          # раздел «Репозиторий», строка «Использовать как основной
+          # репозиторий». Снова «Authentication failed» - первым делом
+          # сверить адрес там.
           git -c credential.helper='!f() { echo "username=ula-star"; echo "password=$AMVERA_PASSWORD"; }; f' \
-              push --force "https://git.amvera.ru/$LOGIN/$PROEKT" HEAD:master
+              push --force "https://git.msk0.amvera.ru/$LOGIN/$PROEKT" HEAD:master
 
           echo "Отправлено. Amvera собирает ветку master и запускает сборку сама."
