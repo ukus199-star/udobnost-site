@@ -15,6 +15,7 @@
 //   503 { oshibka: "vyklyucheno" }      форма ещё не включена
 //   502 { oshibka: "servis" }           Unisender не принял или не ответил
 
+import { createHash } from "node:crypto";
 import { parseZayavka } from "@/lib/pochta";
 import {
   nastroykiIzOkruzheniya,
@@ -30,26 +31,48 @@ import { insertEvent } from "@/lib/db";
 // засыпать письмами чужой ящик, израсходовать бесплатные 1500 писем месяца за
 // минуту и получить блокировку аккаунта Unisender за рассылку без согласия.
 //
-// Два потолка:
+// Четыре потолка:
 //   - с одного адреса отправителя - 5 заявок за 10 минут. Человеку, который
 //     ошибся в почте и переотправил, хватит с запасом;
-//   - на всех - 20 заявок в минуту. Больше, чем мы ждём за день.
+//   - на всех - 20 заявок в минуту. Больше, чем мы ждём за день;
+//   - на один адрес почты - 3 письма в сутки;
+//   - на всех - 100 писем в сутки.
+//
+// Последние два добавлены 22.09.2026 после протокола пяти ходов. Адрес
+// отправителя сервер берёт из заголовка, а заголовок можно подделать: восемь
+// заявок на одну почту с выдуманными адресами прошли все. Потолки на почту и
+// на сутки от заголовка не зависят - чужой ящик не засыпать и месячный запас
+// Unisender (1500 писем) за час не выбрать.
 //
 // Адрес отправителя запроса (IP) живёт только в памяти процесса, пока идёт
 // окно в 10 минут, не записывается ни в базу, ни в журнал и стирается при
 // перезапуске. Без него ограничение по одному отправителю не построить: номер
 // прохождения придумывает браузер, и его можно менять на каждый запрос.
+// Почта в памяти хранится только отпечатком - по нему нельзя восстановить
+// адрес, но можно узнать тот же адрес при следующей заявке.
 const oknoIpMs = 10 * 60_000;
 const maksSIp = 5;
 const oknoObsheeMs = 60_000;
 const maksObshee = 20;
+const oknoSutkiMs = 24 * 60 * 60_000;
+const maksNaAdres = 3;
+const maksZaSutki = 100;
 
 let nachaloOknaIp = 0;
 const poIp = new Map<string, number>();
 let nachaloOknaObshego = 0;
 let obsheeVOkne = 0;
+let nachaloSutok = 0;
+const poAdresu = new Map<string, number>();
+let zaSutki = 0;
 
-function propustit(ip: string, seychas: number): boolean {
+// "ok" - пропустить; "chasto" - этот человек или этот адрес слишком часто;
+// "sutki" - исчерпан общий суточный запас.
+function propustit(
+  ip: string,
+  adres: string,
+  seychas: number,
+): "ok" | "chasto" | "sutki" {
   if (seychas - nachaloOknaIp >= oknoIpMs) {
     nachaloOknaIp = seychas;
     poIp.clear();
@@ -58,13 +81,30 @@ function propustit(ip: string, seychas: number): boolean {
     nachaloOknaObshego = seychas;
     obsheeVOkne = 0;
   }
+  if (seychas - nachaloSutok >= oknoSutkiMs) {
+    nachaloSutok = seychas;
+    poAdresu.clear();
+    zaSutki = 0;
+  }
 
+  if (zaSutki >= maksZaSutki) return "sutki";
+
+  const otpechatok = createHash("sha256").update(adres).digest("hex");
+  const naEtotAdres = poAdresu.get(otpechatok) ?? 0;
   const sEtogoIp = poIp.get(ip) ?? 0;
-  if (sEtogoIp >= maksSIp || obsheeVOkne >= maksObshee) return false;
+  if (
+    naEtotAdres >= maksNaAdres ||
+    sEtogoIp >= maksSIp ||
+    obsheeVOkne >= maksObshee
+  ) {
+    return "chasto";
+  }
 
+  poAdresu.set(otpechatok, naEtotAdres + 1);
   poIp.set(ip, sEtogoIp + 1);
   obsheeVOkne += 1;
-  return true;
+  zaSutki += 1;
+  return "ok";
 }
 
 // Адрес отправителя. Amvera стоит перед нашим сервером посредником и
@@ -117,8 +157,13 @@ export async function POST(zapros: Request) {
   if ("oshibka" in razbor) return otvet(400, { oshibka: razbor.oshibka });
   const { zayavka } = razbor;
 
-  if (!propustit(adresOtpravitelya(zapros), Date.now())) {
-    return otvet(429, { oshibka: "chasto" });
+  const propusk = propustit(adresOtpravitelya(zapros), zayavka.email, Date.now());
+  if (propusk === "chasto") return otvet(429, { oshibka: "chasto" });
+  if (propusk === "sutki") {
+    // Сигнал владелице: либо тест стал очень популярен, либо формой
+    // злоупотребляют. Без адреса почты.
+    console.error(`[pochta] исчерпан суточный потолок: ${maksZaSutki} писем`);
+    return otvet(502, { oshibka: "servis" });
   }
 
   try {
