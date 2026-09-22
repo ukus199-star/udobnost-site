@@ -15,7 +15,11 @@ import { questions, typePriority, type TypeCode } from "@/data/questions";
 // start  - человек нажал «Начать»
 // answer - ответил на вопрос с таким-то номером
 // result - дошёл до результата
-export const eventKinds = ["start", "answer", "result"] as const;
+// pochta - оставил почту, и письмо с разбором ушло. Без самого адреса.
+//          Пишет только сервер, в /api/pochta, после успешной отправки -
+//          снаружи через /api/events его не принять (см. parseEvent). Иначе
+//          любой мог бы накрутить главную цифру лид-магнита.
+export const eventKinds = ["start", "answer", "result", "pochta"] as const;
 export type EventKind = (typeof eventKinds)[number];
 
 export type TestEvent = {
@@ -54,6 +58,9 @@ export function parseEvent(raw: unknown): TestEvent | null {
   const kind = data.kind;
   if (typeof kind !== "string") return null;
   if (!eventKinds.includes(kind as EventKind)) return null;
+
+  // «Оставил почту» снаружи не принимается - его пишет только сервер.
+  if (kind === "pochta") return null;
 
   if (kind === "start") {
     return { runId, kind: "start" };

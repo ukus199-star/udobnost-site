@@ -66,6 +66,15 @@ const doshli = `
   WHERE kind = 'result'
 `;
 
+// Сколько оставили почту - главная цифра лид-магнита. Событие пишет только
+// сервер, после того как письмо ушло, и без самого адреса. Добавлено вместе
+// с формой почты, план 2026-09-22-forma-pochty.md, решение 5.
+const ostavili = `
+  SELECT COUNT(DISTINCT run_id) AS skolko
+  FROM events
+  WHERE kind = 'pochta'
+`;
+
 // На каком вопросе уходят чаще всего.
 //
 // Читается изнутри наружу. Внутренний запрос берёт каждое прохождение,
@@ -136,17 +145,19 @@ function moskovskoeVremya(date) {
 }
 
 try {
-  const [a, b, c, d, e, f] = await Promise.all([
+  const [a, b, c, d, e, f, g] = await Promise.all([
     pool.query(nachato),
     pool.query(doshli),
     pool.query(gde_uhodyat),
     pool.query(tipy),
     pool.query(period),
     pool.query(ushli_srazu),
+    pool.query(ostavili),
   ]);
 
   const nachatoSkolko = Number(a.rows[0].skolko);
   const doshliSkolko = Number(b.rows[0].skolko);
+  const ostaviliSkolko = Number(g.rows[0].skolko);
   const svodka = e.rows[0];
 
   console.log("");
@@ -158,6 +169,12 @@ try {
   if (nachatoSkolko > 0) {
     const dolya = Math.round((doshliSkolko / nachatoSkolko) * 100);
     console.log("Доходит до конца:              ", dolya + "%");
+  }
+
+  console.log("Оставили почту:                ", ostaviliSkolko);
+  if (doshliSkolko > 0) {
+    const dolyaPochty = Math.round((ostaviliSkolko / doshliSkolko) * 100);
+    console.log("Из дошедших оставили почту:    ", dolyaPochty + "%");
   }
 
   console.log("");
