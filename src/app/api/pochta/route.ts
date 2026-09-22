@@ -80,6 +80,18 @@ function otvet(status: number, telo: object): Response {
   return Response.json(telo, { status });
 }
 
+// Включена ли форма. Страница спрашивает об этом при показе результата и не
+// рисует форму, пока ответ «нет». Переменная читается при каждом запросе, а
+// не при сборке: включить форму можно на работающем сайте, без пересборки.
+export async function GET() {
+  const vklyucheno =
+    process.env.FORMA_POCHTY === "vkl" && nastroykiIzOkruzheniya() !== null;
+  return Response.json(
+    { vklyucheno },
+    { headers: { "Cache-Control": "no-store" } },
+  );
+}
+
 export async function POST(zapros: Request) {
   // Выключатель. Пока в переменных окружения нет FORMA_POCHTY=vkl, адрес ничего
   // не делает. Так форму можно выложить заранее, а включить одной переменной -

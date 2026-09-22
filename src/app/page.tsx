@@ -17,6 +17,7 @@ import {
 import { resultTexts } from "@/data/results";
 import type { TestEvent } from "@/lib/events";
 import { Granica } from "@/components/granica";
+import { FormaPochty } from "@/components/forma-pochty";
 import {
   DLITELNOST_UKHODA,
   Slova,
@@ -820,13 +821,14 @@ export default function Home() {
               </p>
             </div>
 
-            {/* Здесь встанет блок 2 - поле почты «Куда прислать разбор?».
-                Пока - только отступ: поле, которое никуда не отправляет, хуже,
-                чем никакого.
+            {/* Блок 2 - форма почты «Куда прислать разбор?», фаза 3 плана
+                формы почты. Пока на сервере форма не включена, компонент не
+                рисует ничего, и на этом месте остаётся прежний отступ.
 
                 Ссылки ниже - тихие, а не кнопки: главный шаг после результата
                 - письмо с разбором, и повторное прохождение не должно его
-                перебивать, когда форма появится. */}
+                перебивать. */}
+            <FormaPochty resultType={screen} runId={runId} />
             <div
               className="animate-proyavlenie mt-16 flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-8"
               style={{ animationDelay: "280ms" }}
