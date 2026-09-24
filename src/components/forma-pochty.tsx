@@ -247,10 +247,6 @@ export function FormaPochty({
         )}
         {otpravka ? "Отправляю…" : "Прислать разбор"}
       </button>
-
-      <p className="mt-3 text-center text-sm text-priglushennyy">
-        Адрес нужен, чтобы отправить вам одно письмо с разбором.
-      </p>
     </form>
   );
 }
