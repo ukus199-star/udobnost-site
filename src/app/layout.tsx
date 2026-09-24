@@ -10,8 +10,10 @@ const opisanie =
 export const metadata: Metadata = {
   // Адрес сайта. Картинку превью мессенджер забирает только по полной
   // ссылке, а без адреса Next.js подставил бы в неё localhost - и в Telegram
-  // превью вышло бы пустым. Поменять вместе с доменом, фаза 7 основного плана.
-  metadataBase: new URL("https://my-work-code-ula-star.amvera.io"),
+  // превью вышло бы пустым. Свой домен привязан 24.09.2026; прежний адрес
+  // my-work-code-ula-star.amvera.io продолжает открываться, но ссылки и
+  // превью ведут сюда.
+  metadataBase: new URL("https://kustova-psy.ru"),
   title: nazvanie,
   description: opisanie,
   // Превью ссылки в мессенджерах. Сама картинка - файл opengraph-image.png
