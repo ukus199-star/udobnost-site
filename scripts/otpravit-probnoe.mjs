@@ -110,5 +110,6 @@ if (oshibka) {
   console.log("НЕ УШЛО: " + JSON.stringify(oshibka));
   process.exit(1);
 }
-console.log(`Отправлено на ${KUDA}, тема: [проба ${vremya}] ${pismo.tema}`);
+console.log(`Отправлено на ${KUDA}, тема: [проба ${vremya}] 📘 Результаты теста: подробный разбор`);
+console.log(`Внутри письма результат: ${pismo.tema}`);
 console.log("Не забыть убрать адрес из списков: node ../scripts/ubrat-testovyy-adres.mjs ubrat");
