@@ -94,7 +94,7 @@ const rezultat = await vyzvat("sendEmail", {
   email: KUDA,
   sender_name: "Ульяна Кустова",
   sender_email: otpravitel,
-  subject: `[проба ${vremya}] ${pismo.tema}`,
+  subject: `[проба ${vremya}] Результаты теста: подробный разбор`,
   body: pismoVHtml(pismo),
   list_id: spisok,
   lang: "ru",

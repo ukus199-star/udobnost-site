@@ -140,11 +140,34 @@ function razbitNaRazdely(abzacy: string[]): Razdel[] {
   return razdely;
 }
 
+function vvodnayaChast(abzacy: string[]): string {
+  // Вводные абзацы идут без карточки: рамка вокруг двух строк выглядела
+  // пустой (оценка владелицы 25.09.2026).
+  return abzacy
+    .map((abzac) => `<p class="tekst" style="margin:0 0 16px;font-family:${SHRIFT};font-size:16px;line-height:1.6;color:${CVETA.tekst}">${razmetka(abzac)}</p>`)
+    .join("\n");
+}
+
+// Строка «кто вы по результату» стоит после приветствия, а не под заголовком:
+// сначала человек здоровается и понимает, что это за письмо, потом получает
+// результат. Просьба владелицы 25.09.2026.
+function strokaRezultata(tema: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 18px;">
+                <tr>
+                  <td class="vrezka" style="background-color:#eef0e2;border-radius:12px;padding:18px 20px;">
+                    <p class="tihiy" style="margin:0 0 4px;font-family:${SHRIFT};font-size:13px;line-height:1.3;letter-spacing:0.04em;text-transform:uppercase;color:${CVETA.priglushennyy};">Ваш результат</p>
+                    <p class="tekst" style="margin:0;font-family:${SHRIFT};font-size:20px;line-height:1.3;font-weight:600;color:${CVETA.tekst};">${ekran(tema)}</p>
+                  </td>
+                </tr>
+              </table>`;
+}
+
 function teloPisma(abzacy: string[]): string {
   // Класс нужен каждому элементу отдельно: цвет стоит в самом элементе, а
   // правило на родителе его не перебивает - в тёмной теме текст оставался
   // тёмным на тёмном (проверено снимком 25.09.2026).
   return razbitNaRazdely(abzacy)
+    .filter((razdel) => razdel.zagolovok !== null)
     .map((razdel, nomer) => {
       const zelyonyy = nomer % 2 === 1;
       const klass = zelyonyy ? "polosa-zelyonaya" : "polosa-kremovaya";
@@ -168,6 +191,10 @@ ${zagolovok}${tekst}
 
 export function pismoVHtml(pismo: Pismo): string {
   const { razbor, priglashenie, cena, podpis } = razdelitPismo(pismo);
+  // Всё до первого подзаголовка - вступление: «Здравствуйте» и одна фраза о
+  // том, что это за письмо.
+  const pervyyZagolovok = razbor.findIndex((a) => podzagolovok(a) !== null);
+  const vvedenie = pervyyZagolovok === -1 ? razbor : razbor.slice(0, pervyyZagolovok);
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -206,8 +233,11 @@ export function pismoVHtml(pismo: Pismo): string {
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;">
         <tr>
           <td class="kartochka" style="background-color:${CVETA.poverhnost};border:1px solid ${CVETA.granica};border-radius:16px;padding:36px 32px;">
-            <h1 class="zagolovok" style="margin:0 0 6px;font-family:${SHRIFT};font-size:25px;line-height:1.25;font-weight:600;color:${CVETA.tekst};">Результаты теста: подробный разбор</h1>
-            <p class="tihiy" style="margin:0 0 22px;font-family:${SHRIFT};font-size:16px;line-height:1.4;color:${CVETA.priglushennyy};">${ekran(pismo.tema)}</p>
+            <h1 class="zagolovok" style="margin:0 0 18px;font-family:${SHRIFT};font-size:25px;line-height:1.25;font-weight:600;color:${CVETA.tekst};">Результаты теста: подробный разбор</h1>
+            <div>
+${vvodnayaChast(vvedenie)}
+            </div>
+            ${strokaRezultata(pismo.tema)}
             <div>
 ${teloPisma(razbor)}
             </div>${priglashenie ? kartochkaPriglasheniya(priglashenie, cena) : ""}${podpis ? `

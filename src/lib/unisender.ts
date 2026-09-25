@@ -24,6 +24,9 @@ import type { Zayavka } from "@/lib/pochta";
 
 const ADRES_API = "https://api.unisender.com/ru/api/";
 
+// Тема письма - то, что человек видит в списке входящих.
+export const TEMA_PISMA = "Результаты теста: подробный разбор";
+
 // Сколько ждать ответа сервиса. Человек в это время смотрит на кнопку со
 // значком загрузки - дольше восьми секунд ждать нечестно, лучше сказать «не
 // получилось» и дать попробовать ещё раз.
@@ -160,7 +163,11 @@ export async function otpravitRazbor(
     email: zayavka.email,
     sender_name: nastroyki.imyaOtpravitelya,
     sender_email: nastroyki.otpravitel,
-    subject: pismo.tema,
+    // Тема одинаковая у всех пяти писем: в списке почты человек видит
+    // «Результаты теста: подробный разбор», а какой именно у него результат -
+    // уже внутри письма. Просьба владелицы 25.09.2026. Сама строка типа
+    // результата (pismo.tema) показывается врезкой после приветствия.
+    subject: TEMA_PISMA,
     body: pismoVHtml(pismo),
     list_id: spisok,
     lang: "ru",
