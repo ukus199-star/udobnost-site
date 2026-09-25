@@ -120,17 +120,48 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
             </table>`;
 }
 
+// Абзацы, идущие подряд под одним подзаголовком, - это раздел. Разделы
+// чередуются фоном: кремовый, светло-зелёный, снова кремовый. Просьба
+// владелицы 25.09.2026: «сделай разделение кремового и светло-зелёного фона
+// в зависимости от абзаца, так будет эффектнее».
+type Razdel = { zagolovok: string | null; abzacy: string[] };
+
+function razbitNaRazdely(abzacy: string[]): Razdel[] {
+  const razdely: Razdel[] = [];
+  for (const abzac of abzacy) {
+    const zag = podzagolovok(abzac);
+    if (zag !== null) {
+      razdely.push({ zagolovok: zag, abzacy: [] });
+      continue;
+    }
+    if (razdely.length === 0) razdely.push({ zagolovok: null, abzacy: [] });
+    razdely[razdely.length - 1].abzacy.push(abzac);
+  }
+  return razdely;
+}
+
 function teloPisma(abzacy: string[]): string {
-  return abzacy
-    .map((abzac) => {
-      // Класс нужен каждому элементу отдельно: цвет стоит в самом элементе,
-      // а правило на родителе его не перебивает - в тёмной теме текст
-      // оставался тёмным на тёмном (проверено снимком 25.09.2026).
-      const zag = podzagolovok(abzac);
-      if (zag !== null) {
-        return `<h2 class="tekst" style="margin:32px 0 10px;font-family:${SHRIFT};font-size:19px;line-height:1.35;font-weight:600;color:${CVETA.tekst}">${ekran(zag)}</h2>`;
-      }
-      return `<p class="tekst" style="margin:0 0 16px;font-family:${SHRIFT};font-size:16px;line-height:1.6;color:${CVETA.tekst}">${razmetka(abzac)}</p>`;
+  // Класс нужен каждому элементу отдельно: цвет стоит в самом элементе, а
+  // правило на родителе его не перебивает - в тёмной теме текст оставался
+  // тёмным на тёмном (проверено снимком 25.09.2026).
+  return razbitNaRazdely(abzacy)
+    .map((razdel, nomer) => {
+      const zelyonyy = nomer % 2 === 1;
+      const klass = zelyonyy ? "polosa-zelyonaya" : "polosa-kremovaya";
+      const fon = zelyonyy ? "#eef0e2" : CVETA.fon;
+      const zagolovok = razdel.zagolovok
+        ? `<h2 class="tekst" style="margin:0 0 10px;font-family:${SHRIFT};font-size:19px;line-height:1.35;font-weight:600;color:${CVETA.tekst}">${ekran(razdel.zagolovok)}</h2>`
+        : "";
+      const tekst = razdel.abzacy
+        .map((abzac, i, vse) => `<p class="tekst" style="margin:0 0 ${i === vse.length - 1 ? 0 : 16}px;font-family:${SHRIFT};font-size:16px;line-height:1.6;color:${CVETA.tekst}">${razmetka(abzac)}</p>`)
+        .join("\n");
+      return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;">
+                <tr>
+                  <td class="${klass}" style="background-color:${fon};border-radius:12px;padding:22px 20px;">
+${zagolovok}${tekst}
+                  </td>
+                </tr>
+              </table>`;
     })
     .join("\n");
 }
@@ -160,6 +191,8 @@ export function pismoVHtml(pismo: Pismo): string {
     .tihiy { color:#a29a8b !important; }
     .cherta { background-color:#413c33 !important; }
     .vrezka { background-color:#2a2e1f !important; border-color:#413c33 !important; }
+    .polosa-kremovaya { background-color:#1f1c18 !important; }
+    .polosa-zelyonaya { background-color:#2a2e1f !important; }
   }
 </style>
 </head>
@@ -173,7 +206,8 @@ export function pismoVHtml(pismo: Pismo): string {
       <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:560px;">
         <tr>
           <td class="kartochka" style="background-color:${CVETA.poverhnost};border:1px solid ${CVETA.granica};border-radius:16px;padding:36px 32px;">
-            <h1 class="zagolovok" style="margin:0 0 20px;font-family:${SHRIFT};font-size:25px;line-height:1.25;font-weight:600;color:${CVETA.tekst};">${ekran(pismo.tema)}</h1>
+            <h1 class="zagolovok" style="margin:0 0 6px;font-family:${SHRIFT};font-size:25px;line-height:1.25;font-weight:600;color:${CVETA.tekst};">Результаты теста: подробный разбор</h1>
+            <p class="tihiy" style="margin:0 0 22px;font-family:${SHRIFT};font-size:16px;line-height:1.4;color:${CVETA.priglushennyy};">${ekran(pismo.tema)}</p>
             <div>
 ${teloPisma(razbor)}
             </div>${priglashenie ? kartochkaPriglasheniya(priglashenie, cena) : ""}${podpis ? `
