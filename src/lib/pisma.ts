@@ -61,8 +61,67 @@ function podzagolovok(abzac: string): string | null {
   return m ? m[1] : null;
 }
 
-function teloPisma(pismo: Pismo): string {
-  return pismo.abzacy
+// Куда ведёт кнопка записи. Решение владелицы 25.09.2026: телеграм, путь в
+// одно нажатие, и человек сразу виден ей.
+const TELEGRAM = "https://t.me/ukusto";
+
+// Хвост письма - приглашение на встречу - вынимается из общего текста и
+// показывается карточкой: цена крупно, кнопка, запасной путь. Оценка
+// владелицы 25.09.2026: «нужно указать текст про цену и возможность записи
+// более масштабным шрифтом», «путь должен быть максимально простым».
+function razdelitPismo(pismo: Pismo): {
+  razbor: string[];
+  priglashenie: string | null;
+  cena: string | null;
+  podpis: string | null;
+} {
+  const abzacy = [...pismo.abzacy];
+
+  // Подпись - последний абзац целиком курсивом.
+  const podpis =
+    abzacy.length > 0 && /^\*[^*].*\*$/.test(abzacy[abzacy.length - 1])
+      ? abzacy.pop()!.slice(1, -1)
+      : null;
+
+  const nachalo = abzacy.findIndex((a) => a.startsWith("Первая встреча"));
+  if (nachalo === -1) return { razbor: abzacy, priglashenie: null, cena: null, podpis };
+
+  const hvost = abzacy.splice(nachalo).join(" ");
+  // Цена берётся из самого текста, а не пишется здесь второй раз: правило
+  // репо номер 1, меняющиеся числа не хардкодим.
+  const cena = hvost.match(/(\d[\d\s]{2,7})\s*рублей/)?.[1]?.trim() ?? null;
+  // Из текста карточки убираем то, что теперь стоит крупно и на кнопке.
+  const priglashenie = hvost
+    .replace(/\s*50-60 минут,\s*\d[\d\s]*рублей\./, "")
+    .replace(/\s*Ответить можно прямо на это письмо\./, "")
+    .trim();
+
+  return { razbor: abzacy, priglashenie, cena, podpis };
+}
+
+function kartochkaPriglasheniya(priglashenie: string, cena: string | null): string {
+  return `
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:32px 0 8px;">
+              <tr>
+                <td class="vrezka" style="background-color:#eef0e2;border:1px solid ${CVETA.granica};border-radius:14px;padding:24px 22px;">
+                  <p class="tekst" style="margin:0 0 6px;font-family:${SHRIFT};font-size:17px;line-height:1.4;font-weight:600;color:${CVETA.tekst};">🌿 Первая встреча</p>
+                  <p class="tekst" style="margin:0 0 14px;font-family:${SHRIFT};font-size:15px;line-height:1.55;color:${CVETA.tekst};">${razmetka(priglashenie)}</p>
+                  ${cena ? `<p class="tekst" style="margin:0 0 18px;font-family:${SHRIFT};font-size:24px;line-height:1.2;font-weight:600;color:${CVETA.tekst};">${ekran(cena)} ₽ <span style="font-size:15px;font-weight:400;">за встречу 50-60 минут</span></p>` : ""}
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;">
+                    <tr>
+                      <td align="center" style="background-color:${CVETA.akcent};border-radius:10px;">
+                        <a href="${TELEGRAM}" style="display:inline-block;padding:14px 28px;font-family:${SHRIFT};font-size:16px;line-height:1.2;font-weight:600;color:#fffefa;text-decoration:none;">Записаться в телеграме</a>
+                      </td>
+                    </tr>
+                  </table>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">или просто ответьте на это письмо</p>
+                </td>
+              </tr>
+            </table>`;
+}
+
+function teloPisma(abzacy: string[]): string {
+  return abzacy
     .map((abzac) => {
       // Класс нужен каждому элементу отдельно: цвет стоит в самом элементе,
       // а правило на родителе его не перебивает - в тёмной теме текст
@@ -77,6 +136,7 @@ function teloPisma(pismo: Pismo): string {
 }
 
 export function pismoVHtml(pismo: Pismo): string {
+  const { razbor, priglashenie, cena, podpis } = razdelitPismo(pismo);
   return `<!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -99,6 +159,7 @@ export function pismoVHtml(pismo: Pismo): string {
     .zagolovok, .tekst { color:#ece8e0 !important; }
     .tihiy { color:#a29a8b !important; }
     .cherta { background-color:#413c33 !important; }
+    .vrezka { background-color:#2a2e1f !important; border-color:#413c33 !important; }
   }
 </style>
 </head>
@@ -114,8 +175,9 @@ export function pismoVHtml(pismo: Pismo): string {
           <td class="kartochka" style="background-color:${CVETA.poverhnost};border:1px solid ${CVETA.granica};border-radius:16px;padding:36px 32px;">
             <h1 class="zagolovok" style="margin:0 0 20px;font-family:${SHRIFT};font-size:25px;line-height:1.25;font-weight:600;color:${CVETA.tekst};">${ekran(pismo.tema)}</h1>
             <div>
-${teloPisma(pismo)}
-            </div>
+${teloPisma(razbor)}
+            </div>${priglashenie ? kartochkaPriglasheniya(priglashenie, cena) : ""}${podpis ? `
+            <p class="tihiy" style="margin:22px 0 0;font-family:${SHRIFT};font-size:15px;line-height:1.5;font-style:italic;color:${CVETA.priglushennyy};">${ekran(podpis)}</p>` : ""}
           </td>
         </tr>
         <tr>
