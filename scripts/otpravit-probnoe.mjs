@@ -94,7 +94,9 @@ const rezultat = await vyzvat("sendEmail", {
   email: KUDA,
   sender_name: "Ульяна Кустова",
   sender_email: otpravitel,
-  subject: `[проба ${vremya}] 📘 Результаты теста: подробный разбор`,
+  // В пробах тип результата стоит в теме: письма с одинаковой темой Gmail
+  // склеивает в одну цепочку, и кажется, что пришло только одно.
+  subject: `[проба ${vremya} · ${tip}] 📘 Результаты теста: подробный разбор`,
   body: pismoVHtml(pismo),
   list_id: spisok,
   lang: "ru",
