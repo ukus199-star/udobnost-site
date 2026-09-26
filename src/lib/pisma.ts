@@ -94,6 +94,9 @@ function razdelitPismo(pismo: Pismo): {
   const priglashenie = hvost
     .replace(/\s*50-60 минут,\s*\d[\d\s]*рублей\./, "")
     .replace(/\s*Ответить можно прямо на это письмо\./, "")
+    // Заголовок карточки уже говорит «Первая встреча» - в тексте под ним эти
+    // же слова читались как заикание.
+    .replace(/^Первая встреча\s*-\s*/, "")
     .trim();
 
   return { razbor: abzacy, priglashenie, cena, podpis };
@@ -105,7 +108,7 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
               <tr>
                 <td class="vrezka" style="background-color:#eef0e2;border:1px solid ${CVETA.granica};border-radius:14px;padding:24px 22px;">
                   <p class="tekst" style="margin:0 0 6px;font-family:${SHRIFT};font-size:17px;line-height:1.4;font-weight:600;color:${CVETA.tekst};">🌿 Первая встреча</p>
-                  <p class="tekst" style="margin:0 0 14px;font-family:${SHRIFT};font-size:15px;line-height:1.55;color:${CVETA.tekst};">${razmetka(priglashenie)}</p>
+                  <p class="tekst" style="margin:0 0 14px;font-family:${SHRIFT};font-size:15px;line-height:1.55;color:${CVETA.tekst};">${razmetka(priglashenie.charAt(0).toUpperCase() + priglashenie.slice(1))}</p>
                   ${cena ? `<p class="tekst" style="margin:0 0 18px;font-family:${SHRIFT};font-size:24px;line-height:1.2;font-weight:600;color:${CVETA.tekst};">${ekran(cena)} ₽ <span style="font-size:15px;font-weight:400;">за встречу 50-60 минут</span></p>` : ""}
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;">
                     <tr>
