@@ -61,6 +61,11 @@ function podzagolovok(abzac: string): string | null {
   return m ? m[1] : null;
 }
 
+// Адрес телеграма стоит в письме дважды: кнопкой и видимым текстом. Причина -
+// 27.09.2026 владелица нажала кнопку в Gmail и попала на google.com: Gmail
+// заворачивает ссылки писем в свой редирект и при невысоком доверии к
+// отправителю показывает промежуточную страницу. Видимый адрес работает, даже
+// когда редирект не доводит до конца.
 // Куда ведёт кнопка записи. Решение владелицы 25.09.2026: телеграм, путь в
 // одно нажатие, и человек сразу виден ей.
 const TELEGRAM = "https://t.me/ukusto";
@@ -117,7 +122,7 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
                       </td>
                     </tr>
                   </table>
-                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">или просто ответьте на это письмо</p>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Телеграм: <a href="${TELEGRAM}" style="color:${CVETA.akcent};font-weight:600;">${TELEGRAM.replace("https://", "")}</a> &middot; или просто ответьте на это письмо</p>
                 </td>
               </tr>
             </table>`;
