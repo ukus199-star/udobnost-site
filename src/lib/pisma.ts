@@ -124,7 +124,7 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
                       </td>
                     </tr>
                   </table>
-                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Телеграм: <a href="${TELEGRAM}" style="color:${CVETA.akcent};font-weight:600;">@${TELEGRAM.split("/").pop()}</a> &middot; или просто ответьте на это письмо</p>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Телеграм: <span style="color:${CVETA.akcent};font-weight:600;">@${TELEGRAM.split("/").pop()}</span> &middot; или просто ответьте на это письмо</p>
                 </td>
               </tr>
             </table>`;
