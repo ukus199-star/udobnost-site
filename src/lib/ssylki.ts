@@ -21,5 +21,8 @@ export const SAYT = "https://kustova-psy.ru";
  */
 export const KOROTKIY_ADRES_ZAPISI = "kustova-psy.ru/tg";
 
+/** Тот же короткий адрес, но целиком - для кнопки, которой нужна ссылка. */
+export const KOROTKIY_ADRES_ZAPISI_POLNYY = SAYT + "/tg";
+
 /** Ник в телеграме, `@ukusto`: его можно ввести в поиск руками. */
 export const NIK_TELEGRAMA = "@" + TELEGRAM.split("/").filter(Boolean).pop();
