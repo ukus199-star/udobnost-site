@@ -22,7 +22,7 @@
 // читаемым, потому что все цвета заданы явно.
 
 import type { Pismo } from "@/data/pisma";
-import { SAYT, KOROTKIY_ADRES_ZAPISI, KOROTKIY_ADRES_ZAPISI_POLNYY, NIK_TELEGRAMA } from "@/lib/ssylki";
+import { TELEGRAM, SAYT, KOROTKIY_ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
 
 // Цвета сайта, значениями. В письме нельзя сослаться на переменные из
 // globals.css - письмо уходит из нашего дома и живёт в чужом.
@@ -118,11 +118,23 @@ function razdelitPismo(pismo: Pismo): {
 // компьютере Gmail адрес подсветил, а в телефоне нет, и кнопка там перестала
 // работать вовсе. Плюс подсветку он красит по-своему, и выглядело это плохо.
 //
-// Поэтому кнопка вернулась к обычному виду, а страховкой служит строка под ней:
-// адрес и ник написаны словами, их можно набрать или скопировать. Пока сервис
-// рассылки подменяет ссылки на `geteml.com`, сама кнопка не работает, и строка
-// - единственный рабочий путь. Когда подмену отключат, строку можно убрать -
-// это фаза 4 плана `plans/2026-09-28-ssylki-v-pismah.md`.
+// Поэтому кнопка вернулась к обычному виду, а страховкой служит строка под ней.
+//
+// Путей к записи три, и это не перестраховка: у читателей две зеркальные
+// ситуации, и ни один путь не годится обоим (выяснено 28.09.2026 на двух
+// телефонах).
+//
+//   - С VPN: сайт kustova-psy.ru не открывается (российский хостинг не пускает
+//     зарубежные адреса), зато работает t.me. Для них - кнопка.
+//   - Без VPN: наоборот, сайт открывается, а t.me заблокирован. Для них -
+//     короткий адрес kustova-psy.ru/tg, набранный руками.
+//   - Ник @ukusto работает у всех, у кого стоит приложение телеграма: оно не
+//     зависит ни от сайта, ни от веб-адреса. Поэтому ник стоит первым.
+//
+// Пока сервис рассылки подменяет ссылки на `geteml.com`, кнопка не работает ни
+// у кого, и живой остаётся только строка. Когда подмену отключат, кнопка
+// заработает у читателей с VPN - это фаза 4 плана
+// `plans/2026-09-28-ssylki-v-pismah.md`.
 function kartochkaPriglasheniya(priglashenie: string, cena: string | null): string {
   return `
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:32px 0 8px;">
@@ -134,11 +146,11 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;">
                     <tr>
                       <td align="center" style="background-color:${CVETA.akcent};border-radius:10px;">
-                        <a href="${KOROTKIY_ADRES_ZAPISI_POLNYY}" style="display:inline-block;padding:14px 28px;font-family:${SHRIFT};font-size:16px;line-height:1.2;font-weight:600;color:#fffefa;text-decoration:none;">Записаться в телеграме</a>
+                        <a href="${TELEGRAM}" style="display:inline-block;padding:14px 28px;font-family:${SHRIFT};font-size:16px;line-height:1.2;font-weight:600;color:#fffefa;text-decoration:none;">Записаться в телеграме</a>
                       </td>
                     </tr>
                   </table>
-                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Не открылось - наберите <span style="color:${CVETA.akcent};font-weight:600;">${KOROTKIY_ADRES_ZAPISI}</span> или напишите в телеграм <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span>. Можно просто ответить на это письмо.</p>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Не открылось - найдите меня в телеграме по нику <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span> или наберите <span style="color:${CVETA.akcent};font-weight:600;">${KOROTKIY_ADRES_ZAPISI}</span>. Можно просто ответить на это письмо.</p>
                 </td>
               </tr>
             </table>`;
