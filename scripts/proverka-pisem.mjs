@@ -7,11 +7,8 @@
 // чередование полос, карточку приглашения с ценой и кнопкой, подпись,
 // отсутствие следов разметки. Красоту смотрим глазами на снимках.
 
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { sobratPisma } from "./sobrat-pisma.mjs";
 
-const papkaSkripta = dirname(fileURLToPath(import.meta.url));
 const { pisma, pismoVHtml, ubrat } = await sobratPisma();
 
 const itogi = [];

@@ -15,6 +15,7 @@
 // Копии файлов делаются заново при каждом запуске - письмо собирается из `src`,
 // устареть нечему.
 
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sobratPisma } from "./sobrat-pisma.mjs";

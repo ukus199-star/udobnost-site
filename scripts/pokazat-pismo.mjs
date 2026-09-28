@@ -7,12 +7,11 @@
 // Файл кладётся во временную папку, путь печатается. Письмо никому не
 // отправляется: это просто предпросмотр.
 
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { sobratPisma } from "./sobrat-pisma.mjs";
 
-const papkaSkripta = dirname(fileURLToPath(import.meta.url));
-const { pisma, pismoVHtml, ubrat } = await sobratPisma();
+const { pisma, pismoVHtml, papka } = await sobratPisma("pismo-predprosmotr");
 
 const tip = process.argv[2] ?? "rescuer";
 const pismo = pisma[tip];
@@ -21,6 +20,7 @@ if (!pismo) {
   process.exit(2);
 }
 
-const fayl = join(papkaKopiy, `${tip}.html`);
+// Папку не убираем: файл нужен, чтобы открыть его в браузере.
+const fayl = join(papka, `${tip}.html`);
 await writeFile(fayl, pismoVHtml(pismo));
 console.log(fayl);

@@ -12,6 +12,7 @@
 // В тему письма подставляется время отправки: в ящике накопились письма с
 // одинаковыми темами, и без времени их не различить.
 
+import { readFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sobratPisma } from "./sobrat-pisma.mjs";
