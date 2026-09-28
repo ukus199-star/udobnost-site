@@ -22,7 +22,7 @@
 // читаемым, потому что все цвета заданы явно.
 
 import type { Pismo } from "@/data/pisma";
-import { TELEGRAM, SAYT, KOROTKIY_ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
+import { TELEGRAM, SAYT, NIK_TELEGRAMA } from "@/lib/ssylki";
 
 // Цвета сайта, значениями. В письме нельзя сослаться на переменные из
 // globals.css - письмо уходит из нашего дома и живёт в чужом.
@@ -126,8 +126,10 @@ function razdelitPismo(pismo: Pismo): {
 //
 //   - С VPN: сайт kustova-psy.ru не открывается (российский хостинг не пускает
 //     зарубежные адреса), зато работает t.me. Для них - кнопка.
-//   - Без VPN: наоборот, сайт открывается, а t.me заблокирован. Для них -
-//     короткий адрес kustova-psy.ru/tg, набранный руками.
+//   - Без VPN: наоборот, сайт открывается, а t.me заблокирован. Короткий адрес
+//     kustova-psy.ru/tg им не поможет - он сам перенаправляет на t.me, то есть
+//     упирается в ту же стену, поэтому из письма он убран 28.09.2026. Живёт он
+//     теперь ради постов и диктовки голосом.
 //   - Ник @ukusto работает у всех, у кого стоит приложение телеграма: оно не
 //     зависит ни от сайта, ни от веб-адреса. Поэтому ник стоит первым.
 //
@@ -150,7 +152,7 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
                       </td>
                     </tr>
                   </table>
-                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Не открылось - найдите меня в телеграме по нику <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span> или наберите <span style="color:${CVETA.akcent};font-weight:600;">${KOROTKIY_ADRES_ZAPISI}</span>. Можно просто ответить на это письмо.</p>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Не открылось - найдите меня в телеграме: <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span>. Можно просто ответить на это письмо.</p>
                 </td>
               </tr>
             </table>`;
@@ -187,15 +189,13 @@ function vvodnayaChast(abzacy: string[]): string {
 // Строка «кто вы по результату» стоит после приветствия, а не под заголовком:
 // сначала человек здоровается и понимает, что это за письмо, потом получает
 // результат. Просьба владелицы 25.09.2026.
+//
+// Рамки и заливки у этого блока нет: 28.09.2026 владелица попросила убрать их,
+// чтобы название типа стояло на общем фоне, как и текст над ним. Врезка делала
+// на нём слишком сильный акцент для письма, которое и так всё про этот тип.
 function strokaRezultata(tema: string): string {
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:6px 0 18px;">
-                <tr>
-                  <td class="vrezka" style="background-color:#eef0e2;border-radius:12px;padding:18px 20px;">
-                    <p class="tihiy" style="margin:0 0 4px;font-family:${SHRIFT};font-size:13px;line-height:1.3;letter-spacing:0.04em;text-transform:uppercase;color:${CVETA.priglushennyy};">Ваш результат</p>
-                    <p class="tekst" style="margin:0;font-family:${SHRIFT};font-size:20px;line-height:1.3;font-weight:600;color:${CVETA.tekst};">${ekran(tema)}</p>
-                  </td>
-                </tr>
-              </table>`;
+  return `<p class="tihiy" style="margin:18px 0 2px;font-family:${SHRIFT};font-size:13px;line-height:1.3;letter-spacing:0.04em;text-transform:uppercase;color:${CVETA.priglushennyy};">Ваш результат</p>
+              <p class="tekst" style="margin:0 0 20px;font-family:${SHRIFT};font-size:20px;line-height:1.3;font-weight:600;color:${CVETA.tekst};">${ekran(tema)}</p>`;
 }
 
 function teloPisma(abzacy: string[]): string {
