@@ -22,7 +22,7 @@
 // читаемым, потому что все цвета заданы явно.
 
 import type { Pismo } from "@/data/pisma";
-import { TELEGRAM, SAYT, KOROTKIY_ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
+import { SAYT, KOROTKIY_ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
 
 // Цвета сайта, значениями. В письме нельзя сослаться на переменные из
 // globals.css - письмо уходит из нашего дома и живёт в чужом.
@@ -110,6 +110,19 @@ function razdelitPismo(pismo: Pismo): {
   return { razbor: abzacy, priglashenie, cena, podpis };
 }
 
+// Кнопка записи сделана без тега ссылки: внутри неё написан сам адрес.
+//
+// Причина - 28.09.2026. Сервис рассылки подменяет содержимое всех ссылок на
+// свой домен `geteml.com`, который не открывается у получателей, так что
+// обычная кнопка-ссылка в письме мертва. Текст он не трогает, а почтовые
+// программы сами делают написанный адрес нажимаемым уже у человека. Так кнопка
+// снова работает, и отдельная строка с адресом под ней больше не нужна -
+// просьба владелицы.
+//
+// Плата за это: почтовая программа красит такую ссылку по-своему, чаще синим с
+// подчёркиванием, и наш белый цвет может не сохраниться. Когда подмену
+// отключат, кнопку стоит вернуть к обычному виду со ссылкой - это фаза 4 плана
+// `plans/2026-09-28-ssylki-v-pismah.md`.
 function kartochkaPriglasheniya(priglashenie: string, cena: string | null): string {
   return `
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:32px 0 8px;">
@@ -120,12 +133,12 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
                   ${cena ? `<p class="tekst" style="margin:0 0 18px;font-family:${SHRIFT};font-size:24px;line-height:1.2;font-weight:600;color:${CVETA.tekst};">${ekran(cena)} ₽ <span style="font-size:15px;font-weight:400;">за встречу 50-60 минут</span></p>` : ""}
                   <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;">
                     <tr>
-                      <td align="center" style="background-color:${CVETA.akcent};border-radius:10px;">
-                        <a href="${TELEGRAM}" style="display:inline-block;padding:14px 28px;font-family:${SHRIFT};font-size:16px;line-height:1.2;font-weight:600;color:#fffefa;text-decoration:none;">Записаться в телеграме</a>
+                      <td align="center" style="background-color:${CVETA.akcent};border-radius:10px;padding:14px 28px;font-family:${SHRIFT};font-size:16px;line-height:1.3;font-weight:600;color:#fffefa;">
+                        Записаться:<br><span style="color:#fffefa;">${KOROTKIY_ADRES_ZAPISI}</span>
                       </td>
                     </tr>
                   </table>
-                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Записаться: <span style="color:${CVETA.akcent};font-weight:600;">${KOROTKIY_ADRES_ZAPISI}</span><br>Телеграм: <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span> &middot; или просто ответьте на это письмо</p>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Телеграм: <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span> &middot; или просто ответьте на это письмо</p>
                 </td>
               </tr>
             </table>`;
