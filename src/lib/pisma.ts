@@ -22,6 +22,7 @@
 // читаемым, потому что все цвета заданы явно.
 
 import type { Pismo } from "@/data/pisma";
+import { TELEGRAM, SAYT, KOROTKIY_ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
 
 // Цвета сайта, значениями. В письме нельзя сослаться на переменные из
 // globals.css - письмо уходит из нашего дома и живёт в чужом.
@@ -70,7 +71,7 @@ function podzagolovok(abzac: string): string | null {
 // тогда путь к записи не зависит ни от одного редиректа.
 // Куда ведёт кнопка записи. Решение владелицы 25.09.2026: телеграм, путь в
 // одно нажатие, и человек сразу виден ей.
-const TELEGRAM = "https://t.me/ukusto";
+
 
 // Хвост письма - приглашение на встречу - вынимается из общего текста и
 // показывается карточкой: цена крупно, кнопка, запасной путь. Оценка
@@ -124,7 +125,7 @@ function kartochkaPriglasheniya(priglashenie: string, cena: string | null): stri
                       </td>
                     </tr>
                   </table>
-                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Телеграм: <span style="color:${CVETA.akcent};font-weight:600;">@${TELEGRAM.split("/").filter(Boolean).pop()}</span> &middot; или просто ответьте на это письмо</p>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Записаться: <span style="color:${CVETA.akcent};font-weight:600;">${KOROTKIY_ADRES_ZAPISI}</span><br>Телеграм: <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span> &middot; или просто ответьте на это письмо</p>
                 </td>
               </tr>
             </table>`;
@@ -257,7 +258,7 @@ ${teloPisma(razbor)}
         <tr>
           <td style="padding:20px 8px 0;">
             <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:13px;line-height:1.5;color:${CVETA.priglushennyy};">
-              Письмо пришло, потому что вы прошли тест на <a href="https://kustova-psy.ru" style="color:${CVETA.akcent};">kustova-psy.ru</a> и попросили разбор.
+              Письмо пришло, потому что вы прошли тест на <span style="color:${CVETA.akcent};">${SAYT.replace("https://", "")}</span> и попросили разбор.
             </p>
           </td>
         </tr>

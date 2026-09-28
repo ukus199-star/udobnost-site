@@ -15,29 +15,12 @@
 // Копии файлов делаются заново при каждом запуске - письмо собирается из `src`,
 // устареть нечему.
 
-import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sobratPisma } from "./sobrat-pisma.mjs";
 
 const papkaSkripta = dirname(fileURLToPath(import.meta.url));
-const korni = join(papkaSkripta, "..", "src");
-const kopii = join(tmpdir(), "pyat-pisem-" + Date.now());
-await mkdir(kopii, { recursive: true });
-
-for (const [otkuda, imya] of [
-  [join(korni, "data", "questions.ts"), "questions.ts"],
-  [join(korni, "data", "pisma.ts"), "pisma-dannye.ts"],
-  [join(korni, "lib", "pisma.ts"), "pisma-vid.ts"],
-]) {
-  const tekst = (await readFile(otkuda, "utf8"))
-    .replace(/@\/data\/questions/g, "./questions.ts")
-    .replace(/@\/data\/pisma/g, "./pisma-dannye.ts");
-  await writeFile(join(kopii, imya), tekst);
-}
-
-const { pisma } = await import(join(kopii, "pisma-dannye.ts"));
-const { pismoVHtml } = await import(join(kopii, "pisma-vid.ts"));
+const { pisma, pismoVHtml, ubrat } = await sobratPisma();
 
 const nastroyki = await readFile(join(papkaSkripta, "..", ".env" + ".local"), "utf8");
 const klyuch = nastroyki.match(/^UNISENDER_API_KEY=(.+)$/m)?.[1]?.trim();
@@ -112,7 +95,7 @@ for (let i = 0; i < PORYADOK.length; i++) {
   if (id) otpravleno.push({ nomer: i + 1, tip: pismo.tema, id });
 }
 
-await rm(kopii, { recursive: true, force: true });
+await ubrat();
 
 // Статус доставки Unisender проставляет с задержкой: сразу после отправки все
 // письма показывают `ok_sent`, и это не значит, что они не дошли. 26.09.2026 я

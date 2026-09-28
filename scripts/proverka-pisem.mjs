@@ -7,29 +7,12 @@
 // чередование полос, карточку приглашения с ценой и кнопкой, подпись,
 // отсутствие следов разметки. Красоту смотрим глазами на снимках.
 
-import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sobratPisma } from "./sobrat-pisma.mjs";
 
 const papkaSkripta = dirname(fileURLToPath(import.meta.url));
-const korni = join(papkaSkripta, "..", "src");
-const kopii = join(tmpdir(), "proverka-pisem-" + Date.now());
-await mkdir(kopii, { recursive: true });
-
-for (const [otkuda, imya] of [
-  [join(korni, "data", "questions.ts"), "questions.ts"],
-  [join(korni, "data", "pisma.ts"), "pisma-dannye.ts"],
-  [join(korni, "lib", "pisma.ts"), "pisma-vid.ts"],
-]) {
-  const tekst = (await readFile(otkuda, "utf8"))
-    .replace(/@\/data\/questions/g, "./questions.ts")
-    .replace(/@\/data\/pisma/g, "./pisma-dannye.ts");
-  await writeFile(join(kopii, imya), tekst);
-}
-
-const { pisma } = await import(join(kopii, "pisma-dannye.ts"));
-const { pismoVHtml } = await import(join(kopii, "pisma-vid.ts"));
+const { pisma, pismoVHtml, ubrat } = await sobratPisma();
 
 const itogi = [];
 function proverit(imya, uslovie, detali) {
@@ -72,11 +55,23 @@ for (const [kod, pismo] of Object.entries(pisma)) {
   const emodzi = (html.match(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu) ?? []).length;
   proverit(`эмодзи в письме: ${emodzi} (не больше трёх)`, emodzi <= 3);
 
-  proverit("ссылка на сайт в подвале", html.includes("https://kustova-psy.ru"));
+  // Адреса в письме стоят ТЕКСТОМ, а не ссылками. Причина - сервис рассылки
+  // подменяет содержимое ссылок на свой домен geteml.com, который не
+  // открывается у получателей. Текст он не трогает, а почтовые программы сами
+  // делают такой адрес нажимаемым. Разбор - plans/2026-09-28-ssylki-v-pismah.md
+  proverit("адрес сайта в подвале", html.includes("kustova-psy.ru"));
+
+  proverit("короткий адрес записи в карточке", html.includes("kustova-psy.ru/tg"));
+
+  proverit("адрес записи стоит текстом, а не ссылкой",
+    !/<a[^>]+href="[^"]*kustova-psy\.ru/.test(html));
+
+  proverit("ник телеграма стоит текстом, а не ссылкой",
+    html.includes("@ukusto") && !/<a[^>]+href="[^"]*t\.me/.test(html.replace(/<a href="https:\/\/t\.me\/ukusto"[^>]*>Записаться в телеграме<\/a>/, "")));
   proverit("тёмная тема описана", html.includes("prefers-color-scheme: dark"));
 }
 
-await rm(kopii, { recursive: true, force: true });
+await ubrat();
 
 const plohih = itogi.filter((x) => !x).length;
 console.log(`\nИтого: прошло ${itogi.length - plohih} из ${itogi.length}`);

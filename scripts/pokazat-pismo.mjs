@@ -7,29 +7,12 @@
 // Файл кладётся во временную папку, путь печатается. Письмо никому не
 // отправляется: это просто предпросмотр.
 
-import { mkdir, writeFile, readFile } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sobratPisma } from "./sobrat-pisma.mjs";
 
-const korni = join(dirname(fileURLToPath(import.meta.url)), "..", "src");
-const papkaKopiy = join(tmpdir(), "pismo-predprosmotr");
-await mkdir(papkaKopiy, { recursive: true });
-
-// Псевдонимы вида @/... Node не понимает - делаем копии с прямыми путями.
-for (const [otkuda, imya] of [
-  [join(korni, "data", "questions.ts"), "questions.ts"],
-  [join(korni, "data", "pisma.ts"), "pisma-dannye.ts"],
-  [join(korni, "lib", "pisma.ts"), "pisma-vid.ts"],
-]) {
-  const tekst = (await readFile(otkuda, "utf8"))
-    .replace(/@\/data\/questions/g, "./questions.ts")
-    .replace(/@\/data\/pisma/g, "./pisma-dannye.ts");
-  await writeFile(join(papkaKopiy, imya), tekst);
-}
-
-const { pisma } = await import(join(papkaKopiy, "pisma-dannye.ts"));
-const { pismoVHtml } = await import(join(papkaKopiy, "pisma-vid.ts"));
+const papkaSkripta = dirname(fileURLToPath(import.meta.url));
+const { pisma, pismoVHtml, ubrat } = await sobratPisma();
 
 const tip = process.argv[2] ?? "rescuer";
 const pismo = pisma[tip];

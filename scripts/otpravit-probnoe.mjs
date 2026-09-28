@@ -12,29 +12,12 @@
 // В тему письма подставляется время отправки: в ящике накопились письма с
 // одинаковыми темами, и без времени их не различить.
 
-import { mkdir, writeFile, readFile, rm } from "node:fs/promises";
-import { tmpdir } from "node:os";
-import { join, dirname } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sobratPisma } from "./sobrat-pisma.mjs";
 
 const papkaSkripta = dirname(fileURLToPath(import.meta.url));
-const korni = join(papkaSkripta, "..", "src");
-const kopii = join(tmpdir(), "pismo-otpravka-" + Date.now());
-await mkdir(kopii, { recursive: true });
-
-for (const [otkuda, imya] of [
-  [join(korni, "data", "questions.ts"), "questions.ts"],
-  [join(korni, "data", "pisma.ts"), "pisma-dannye.ts"],
-  [join(korni, "lib", "pisma.ts"), "pisma-vid.ts"],
-]) {
-  const tekst = (await readFile(otkuda, "utf8"))
-    .replace(/@\/data\/questions/g, "./questions.ts")
-    .replace(/@\/data\/pisma/g, "./pisma-dannye.ts");
-  await writeFile(join(kopii, imya), tekst);
-}
-
-const { pisma } = await import(join(kopii, "pisma-dannye.ts"));
-const { pismoVHtml } = await import(join(kopii, "pisma-vid.ts"));
+const { pisma, pismoVHtml, ubrat } = await sobratPisma();
 
 const tip = process.argv[2] ?? "rescuer";
 const pismo = pisma[tip];
@@ -105,7 +88,7 @@ const rezultat = await vyzvat("sendEmail", {
   track_read: "0",
 });
 
-await rm(kopii, { recursive: true, force: true });
+await ubrat();
 
 const oshibka = rezultat?.[0]?.errors?.[0];
 if (oshibka) {
