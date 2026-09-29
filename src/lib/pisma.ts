@@ -22,7 +22,7 @@
 // читаемым, потому что все цвета заданы явно.
 
 import type { Pismo } from "@/data/pisma";
-import { TELEGRAM, SAYT, NIK_TELEGRAMA } from "@/lib/ssylki";
+import { TELEGRAM, SAYT, ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
 
 // Цвета сайта, значениями. В письме нельзя сослаться на переменные из
 // globals.css - письмо уходит из нашего дома и живёт в чужом.
@@ -79,8 +79,6 @@ function podzagolovok(abzac: string): string | null {
 // более масштабным шрифтом», «путь должен быть максимально простым».
 function razdelitPismo(pismo: Pismo): {
   razbor: string[];
-  priglashenie: string | null;
-  cena: string | null;
   podpis: string | null;
 } {
   const abzacy = [...pismo.abzacy];
@@ -91,24 +89,9 @@ function razdelitPismo(pismo: Pismo): {
       ? abzacy.pop()!.slice(1, -1)
       : null;
 
-  const nachalo = abzacy.findIndex((a) => a.startsWith("Первая встреча"));
-  if (nachalo === -1) return { razbor: abzacy, priglashenie: null, cena: null, podpis };
-
-  const hvost = abzacy.splice(nachalo).join(" ");
-  // Цена берётся из самого текста, а не пишется здесь второй раз: правило
-  // репо номер 1, меняющиеся числа не хардкодим.
-  const cena = hvost.match(/(\d[\d\s]{2,7})\s*рублей/)?.[1]?.trim() ?? null;
-  // Из текста карточки убираем то, что теперь стоит крупно и на кнопке.
-  const priglashenie = hvost
-    .replace(/\s*50-60 минут,\s*\d[\d\s]*рублей\./, "")
-    .replace(/\s*Ответить можно прямо на это письмо\./, "")
-    // Заголовок карточки уже говорит «Первая встреча» - в тексте под ним эти
-    // же слова читались как заикание.
-    .replace(/^Первая встреча\s*-\s*/, "")
-    .trim();
-
-  return { razbor: abzacy, priglashenie, cena, podpis };
+  return { razbor: abzacy, podpis };
 }
+
 
 // Кнопка - обычная ссылка, а под ней строка с адресом словами.
 //
@@ -133,30 +116,36 @@ function razdelitPismo(pismo: Pismo): {
 //   - Ник @ukusto работает у всех, у кого стоит приложение телеграма: оно не
 //     зависит ни от сайта, ни от веб-адреса. Поэтому ник стоит первым.
 //
-// Пока сервис рассылки подменяет ссылки на `geteml.com`, кнопка не работает ни
-// у кого, и живой остаётся только строка. Когда подмену отключат, кнопка
-// заработает у читателей с VPN - это фаза 4 плана
-// `plans/2026-09-28-ssylki-v-pismah.md`.
-function kartochkaPriglasheniya(priglashenie: string, cena: string | null): string {
+// Подмена ссылок сервисом рассылки отключена 28.09.2026 по нашей заявке, так
+// что кнопка работает.
+//
+// Почему в блоке нет цены и прямого приглашения. Ответ юриста на вопрос 12
+// (29.09.2026): реклама своих услуг в первом письме с результатами теста
+// рискованна, «со стоимостью точно не нужно это делать». Она же предложила
+// формулировку: сказать, что тест информационный и не заменяет консультацию
+// специалиста, а условия работы оставить на сайте. Поэтому здесь дисклеймер и
+// контакты, а цена и рассказ о первой встрече живут на `/zapis`.
+function blokKontaktov(): string {
   return `
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:32px 0 8px;">
               <tr>
                 <td class="vrezka" style="background-color:#eef0e2;border:1px solid ${CVETA.granica};border-radius:14px;padding:24px 22px;">
-                  <p class="tekst" style="margin:0 0 6px;font-family:${SHRIFT};font-size:17px;line-height:1.4;font-weight:600;color:${CVETA.tekst};">🌿 Первая встреча</p>
-                  <p class="tekst" style="margin:0 0 14px;font-family:${SHRIFT};font-size:15px;line-height:1.55;color:${CVETA.tekst};">${razmetka(priglashenie.charAt(0).toUpperCase() + priglashenie.slice(1))}</p>
-                  ${cena ? `<p class="tekst" style="margin:0 0 18px;font-family:${SHRIFT};font-size:24px;line-height:1.2;font-weight:600;color:${CVETA.tekst};">${ekran(cena)} ₽ <span style="font-size:15px;font-weight:400;">за встречу 50-60 минут</span></p>` : ""}
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 12px;">
+                  <p class="tekst" style="margin:0 0 10px;font-family:${SHRIFT};font-size:17px;line-height:1.4;font-weight:600;color:${CVETA.tekst};">🌿 Если захочется поговорить</p>
+                  <p class="tekst" style="margin:0 0 12px;font-family:${SHRIFT};font-size:15px;line-height:1.55;color:${CVETA.tekst};">Этот разбор - информационный, он не заменяет работу со специалистом.</p>
+                  <p class="tekst" style="margin:0 0 18px;font-family:${SHRIFT};font-size:15px;line-height:1.55;color:${CVETA.tekst};">Если после теста появятся вопросы или захочется разобрать своё не в одиночку, напишите мне в телеграм или просто ответьте на это письмо.</p>
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 14px;">
                     <tr>
                       <td align="center" style="background-color:${CVETA.akcent};border-radius:10px;">
-                        <a href="${TELEGRAM}" style="display:inline-block;padding:14px 28px;font-family:${SHRIFT};font-size:16px;line-height:1.2;font-weight:600;color:#fffefa;text-decoration:none;">Записаться в телеграме</a>
+                        <a href="${TELEGRAM}" style="display:inline-block;padding:14px 28px;font-family:${SHRIFT};font-size:16px;line-height:1.2;font-weight:600;color:#fffefa;text-decoration:none;">Написать мне</a>
                       </td>
                     </tr>
                   </table>
-                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Не открылось - найдите меня в телеграме: <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span>. Можно просто ответить на это письмо.</p>
+                  <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:14px;line-height:1.5;color:${CVETA.priglushennyy};">Не открылось - найдите меня в телеграме: <span style="color:${CVETA.akcent};font-weight:600;">${NIK_TELEGRAMA}</span>.<br>Об условиях работы и о том, как проходит первая встреча, - на сайте <span style="color:${CVETA.akcent};font-weight:600;">${ADRES_ZAPISI}</span></p>
                 </td>
               </tr>
             </table>`;
 }
+
 
 // Абзацы, идущие подряд под одним подзаголовком, - это раздел. Разделы
 // чередуются фоном: кремовый, светло-зелёный, снова кремовый. Просьба
@@ -226,7 +215,7 @@ ${zagolovok}${tekst}
 }
 
 export function pismoVHtml(pismo: Pismo): string {
-  const { razbor, priglashenie, cena, podpis } = razdelitPismo(pismo);
+  const { razbor, podpis } = razdelitPismo(pismo);
   // Всё до первого подзаголовка - вступление: «Здравствуйте» и одна фраза о
   // том, что это за письмо.
   const pervyyZagolovok = razbor.findIndex((a) => podzagolovok(a) !== null);
@@ -276,7 +265,7 @@ ${vvodnayaChast(vvedenie)}
             ${strokaRezultata(pismo.tema)}
             <div>
 ${teloPisma(razbor)}
-            </div>${priglashenie ? kartochkaPriglasheniya(priglashenie, cena) : ""}${podpis ? `
+            </div>${blokKontaktov()}${podpis ? `
             <p class="tihiy" style="margin:22px 0 0;font-family:${SHRIFT};font-size:15px;line-height:1.5;font-style:italic;color:${CVETA.priglushennyy};">${ekran(podpis)}</p>` : ""}
           </td>
         </tr>

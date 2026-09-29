@@ -24,5 +24,15 @@ export const KOROTKIY_ADRES_ZAPISI = "kustova-psy.ru/tg";
 /** Тот же короткий адрес, но целиком - для кнопки, которой нужна ссылка. */
 export const KOROTKIY_ADRES_ZAPISI_POLNYY = SAYT + "/tg";
 
+/**
+ * Страница с условиями работы: `kustova-psy.ru/zapis`.
+ *
+ * Сюда переехали цена и рассказ о первой встрече. Причина - ответ юриста на
+ * вопрос 12 (29.09.2026): реклама своих услуг в первом письме с результатами
+ * теста рискованна, «со стоимостью точно не нужно это делать». В письме
+ * остаётся только упоминание, что условия есть на сайте.
+ */
+export const ADRES_ZAPISI = "kustova-psy.ru/zapis";
+
 /** Ник в телеграме, `@ukusto`: его можно ввести в поиск руками. */
 export const NIK_TELEGRAMA = "@" + TELEGRAM.split("/").filter(Boolean).pop();
