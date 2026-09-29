@@ -60,7 +60,7 @@ export default function Zapis() {
       </div>
 
       <h2 className="mt-10 text-lg font-semibold text-tekst">
-        Что обычно останавливает
+        Если сомневаетесь, стоит ли идти
       </h2>
       <dl className="mt-4 space-y-5">
         {SOMNENIYA.map(({ vopros, otvet }) => (
