@@ -32,9 +32,16 @@ for (const [kod, pismo] of Object.entries(pisma)) {
   proverit(`разделов полосами: ${polosKremovyh} кремовых, ${polosZelyonyh} зелёных`,
     polosKremovyh + polosZelyonyh >= 3 && Math.abs(polosKremovyh - polosZelyonyh) <= 1);
 
-  proverit("карточка приглашения с ценой", /(\d[\d\s]{2,7})\s*₽/.test(html), html.match(/(\d[\d\s]{2,7})\s*₽/)?.[1]);
+  // Цены в письме быть не должно. Ответ юриста на вопрос 12 от 29.09.2026:
+  // реклама своих услуг в первом письме с результатами теста рискованна, «со
+  // стоимостью точно не нужно это делать». Условия работы живут на /zapis.
+  proverit("цены в письме нет", !/₽|\d+\s*рублей/.test(html));
 
-  proverit("цена не осталась второй раз в тексте", !/\d+\s*рублей/.test(html));
+  proverit("есть оговорка, что разбор не заменяет специалиста",
+    html.includes("не заменяет работу со специалистом"));
+
+  proverit("указано, где смотреть условия работы",
+    html.includes("kustova-psy.ru/zapis"));
 
   // Кнопка ведёт прямо в телеграм: она рассчитана на читателей с VPN, у
   // которых не открывается сайт на российском хостинге. Для тех, кто без VPN,
@@ -48,7 +55,7 @@ for (const [kod, pismo] of Object.entries(pisma)) {
   proverit("под кнопкой ник телеграма словами",
     /Не открылось[\s\S]{0,80}@ukusto/.test(html));
 
-  proverit("запасной путь - ответить на письмо", html.includes("ответить на это письмо"));
+  proverit("запасной путь - ответить на письмо", /ответ(ить|ьте) на это письмо/.test(html));
 
   proverit("подпись автора на месте",
     html.includes("Ульяна Кустова, гештальт-терапевт"));
@@ -74,7 +81,8 @@ for (const [kod, pismo] of Object.entries(pisma)) {
     (html.match(/<a\s[^>]*href=/g) ?? []).length === 1);
 
   proverit("ник телеграма стоит текстом, а не ссылкой",
-    html.includes("@ukusto") && !/<a[^>]+href="[^"]*t\.me/.test(html.replace(/<a href="https:\/\/t\.me\/ukusto"[^>]*>Записаться в телеграме<\/a>/, "")));
+    html.includes("@ukusto") &&
+      !/<a[^>]+href="[^"]*t\.me[^"]*"[^>]*>(?!Написать мне<)/.test(html));
   proverit("тёмная тема описана", html.includes("prefers-color-scheme: dark"));
 }
 
