@@ -66,6 +66,6 @@ jobs:
           # подмены сервера здесь невелик: уходит код публичного
           # репозитория, а закрытый ключ при входе по SSH не передаётся.
           git -c core.sshCommand="ssh -i ~/.ssh/amvera -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
-              push --force "git@git.msk0.amvera.ru:ula-star/my-work-code" HEAD:master
+              push --force "git@git.msk1.amvera.ru:ula-star/my-work-code" HEAD:master
 
           echo "Отправлено. Amvera собирает ветку master и запускает сборку сама."
