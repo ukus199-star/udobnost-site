@@ -22,7 +22,7 @@
 // читаемым, потому что все цвета заданы явно.
 
 import type { Pismo } from "@/data/pisma";
-import { TELEGRAM, SAYT, ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
+import { TELEGRAM, ADRES_TESTA, ADRES_ZAPISI, NIK_TELEGRAMA } from "@/lib/ssylki";
 
 // Цвета сайта, значениями. В письме нельзя сослаться на переменные из
 // globals.css - письмо уходит из нашего дома и живёт в чужом.
@@ -272,7 +272,7 @@ ${teloPisma(razbor)}
         <tr>
           <td style="padding:20px 8px 0;">
             <p class="tihiy" style="margin:0;font-family:${SHRIFT};font-size:13px;line-height:1.5;color:${CVETA.priglushennyy};">
-              Письмо пришло, потому что вы прошли тест на <span style="color:${CVETA.akcent};">${SAYT.replace("https://", "")}</span> и попросили разбор.
+              Письмо пришло, потому что вы прошли тест на <span style="color:${CVETA.akcent};">${ADRES_TESTA.replace("https://", "")}</span> и попросили разбор.
             </p>
           </td>
         </tr>

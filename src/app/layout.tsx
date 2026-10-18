@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ADRES_TESTA } from "@/lib/ssylki";
 
 // Заголовок вкладки браузера и подпись при отправке ссылки.
 // Описание - пересказ «Подробнее о тесте» с первого экрана в двух фразах.
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
   // превью вышло бы пустым. Свой домен привязан 24.09.2026; прежний адрес
   // my-work-code-ula-star.amvera.io продолжает открываться, но ссылки и
   // превью ведут сюда.
-  metadataBase: new URL("https://kustova-psy.ru"),
+  metadataBase: new URL(ADRES_TESTA),
   title: nazvanie,
   description: opisanie,
   // Превью ссылки в мессенджерах. Сама картинка - файл opengraph-image.png
