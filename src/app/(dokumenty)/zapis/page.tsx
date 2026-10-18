@@ -6,6 +6,7 @@
 
 import type { Metadata } from "next";
 import {
+  CENA_OCHNOY_VSTRECHI,
   CENA_PERVOY_VSTRECHI,
   DLITELNOST_VSTRECHI,
   O_PERVOY_VSTRECHE,
@@ -16,7 +17,7 @@ import { TELEGRAM, NIK_TELEGRAMA } from "@/lib/ssylki";
 export const metadata: Metadata = {
   title: "Первая встреча",
   description:
-    "Как проходит первая встреча с гештальт-терапевтом Ульяной Кустовой, сколько она стоит и как написать.",
+    "Как проходит первая встреча с гештальт-терапевтом Ульяной Кустовой онлайн или очно в Москве, сколько она стоит и как написать.",
 };
 
 export default function Zapis() {
@@ -37,9 +38,14 @@ export default function Zapis() {
       <div className="mt-8 rounded-myagkiy border border-granica bg-akcent-myagkiy p-5 sm:p-6">
         <p className="text-2xl font-semibold text-tekst">
           {CENA_PERVOY_VSTRECHI.toLocaleString("ru-RU")} ₽{" "}
-          <span className="text-[15px] font-normal">
-            за встречу {DLITELNOST_VSTRECHI}
-          </span>
+          <span className="text-[15px] font-normal">онлайн</span>
+        </p>
+        <p className="mt-1 text-2xl font-semibold text-tekst">
+          {CENA_OCHNOY_VSTRECHI.toLocaleString("ru-RU")} ₽{" "}
+          <span className="text-[15px] font-normal">очно в Москве</span>
+        </p>
+        <p className="mt-2 text-[15px] text-tekst">
+          За встречу {DLITELNOST_VSTRECHI}
         </p>
 
         <a
