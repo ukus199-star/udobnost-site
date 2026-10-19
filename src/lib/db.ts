@@ -23,7 +23,7 @@ const globalForDb = globalThis as unknown as { pool?: Pool | null };
 export function getPool(): Pool | null {
   if (globalForDb.pool !== undefined) return globalForDb.pool;
 
-  const connectionString = process.env.DATABASE_URL;
+  const connectionString = sobratStrokuPodklyucheniya();
   if (!connectionString) {
     globalForDb.pool = null;
     return null;
@@ -48,6 +48,37 @@ export function getPool(): Pool | null {
 
   globalForDb.pool = pool;
   return pool;
+}
+
+// Строка подключения: DATABASE_URL, а пароль в ней - из DB_PASSWORD, если он
+// задан.
+//
+// Зачем отдельный пароль. 19.10.2026, после переезда Amvera в Москва_1, строку
+// с паролем внутри собирали на телефоне в Заметках и вставляли в секрет - и
+// база дважды отвечала «password authentication failed», хотя поддержка
+// подтвердила, что пароль в настройках базы верный. Значит, при сборке строки
+// пароль искажался, а секрет посмотреть нельзя. Отдельный секрет DB_PASSWORD
+// вставляется кнопкой «копировать» из настроек базы целиком, без ручной
+// сборки, и попадает в строку здесь, уже правильно закодированным: символы
+// вроде @ : / # внутри пароля иначе ломают разбор адреса.
+//
+// В лог пишется, куда и под кем подключаемся, но не пароль.
+function sobratStrokuPodklyucheniya(): string | null {
+  const iskhodnaya = process.env.DATABASE_URL?.trim();
+  if (!iskhodnaya) return null;
+
+  const parol = process.env.DB_PASSWORD?.trim();
+  try {
+    const adres = new URL(iskhodnaya);
+    if (parol) adres.password = encodeURIComponent(parol);
+    console.log(
+      `[db] подключаюсь: ${adres.hostname}:${adres.port || "5432"}${adres.pathname}, пользователь ${decodeURIComponent(adres.username)}, пароль из ${parol ? "DB_PASSWORD" : "DATABASE_URL"}`,
+    );
+    return adres.toString();
+  } catch {
+    console.error("[db] DATABASE_URL не похож на адрес вида postgresql://пользователь:пароль@хост:5432/база");
+    return null;
+  }
 }
 
 // Таблица событий. Создаётся при старте приложения, если её ещё нет.
